@@ -6,10 +6,8 @@ import { getCheapestShipping, ShippingData } from "@/lib/shipping";
 import Result from "./components/Result";
 import { calculateFinalProfitDetail } from "@/lib/profitCalc";
 import FinalResultModal from "./components/FinalResultModal";
-import { isUnder135GBP } from "@/lib/vatRule";
 import { motion, AnimatePresence } from "framer-motion";
 import ExchangeRate from "./components/ExchangeRate";
-
 
 // ここから型定義を追加
 type ShippingResult = {
@@ -27,9 +25,12 @@ type CategoryFeeType = {
 type ShippingMode = "auto" | "manual";
 
 export default function Page() {
-  // State管理
-  const [rate, setRate] = useState<number | null>(null);
+  // ====== State管理 ======
+  const [rate, setRate] = useState<number | null>(null); // 「今選択中の通貨→JPY」
   const [currency, setCurrency] = useState<"GBP" | "USD">("GBP");
+  const [gbpRate, setGbpRate] = useState<number | null>(null);
+  const [usdRate, setUsdRate] = useState<number | null>(null);
+
   const [shippingRates, setShippingRates] = useState<ShippingData | null>(null);
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPrice, setSellingPrice] = useState<number | "">("");
@@ -48,19 +49,20 @@ export default function Page() {
   const [shippingMode, setShippingMode] = useState<ShippingMode>("auto");
   const [manualShipping, setManualShipping] = useState<number | "">("");
 
-const result = useMemo<ShippingResult | null>(() => {
-  // 手動モードの時は常に null
-  if (shippingMode !== "auto") return null;
-
-  // データが足りない時も null
-  if (!shippingRates || weight == null || weight <= 0) return null;
-
-  // 自動計算
-  return getCheapestShipping(shippingRates, weight, dimensions);
-}, [shippingMode, shippingRates, weight, dimensions]);
-
   //モーダル制御
   const [isOpen, setIsOpen] = useState(false);
+
+  // ====== 送料関連 ======
+  const result = useMemo<ShippingResult | null>(() => {
+    // 手動モードの時は常に null
+    if (shippingMode !== "auto") return null;
+
+    // データが足りない時も null
+    if (!shippingRates || weight == null || weight <= 0) return null;
+
+    // 自動計算
+    return getCheapestShipping(shippingRates, weight, dimensions);
+  }, [shippingMode, shippingRates, weight, dimensions]);
 
   // ★ 追加: 自動/手動の送料を一元化
   const selectedShippingJPY: number | null =
@@ -70,29 +72,28 @@ const result = useMemo<ShippingResult | null>(() => {
         : Number(manualShipping)
       : result?.price ?? null;
 
-
   const handleRateChange = useCallback(
     (newRate: number | null, newCurrency: "GBP" | "USD") => {
+      // UI 用
       setRate(newRate);
       setCurrency(newCurrency);
+
+      // 両方のレートをここで記憶しておく
+      if (newCurrency === "GBP") {
+        setGbpRate(newRate);
+      } else {
+        setUsdRate(newRate);
+      }
     },
     []
   );
 
-  // 配送料データ読み込み
+  // ====== 初期データ読み込み ======
   useEffect(() => {
     fetch("/data/shipping.json")
       .then((res) => res.json())
       .then((data) => setShippingRates(data));
   }, []);
-
-  // VAT判定専用
-const includeVAT = useMemo(() => {
-  if (typeof sellingPrice === "number") {
-    return isUnder135GBP(sellingPrice);
-  }
-  return false;
-}, [sellingPrice]);
 
   useEffect(() => {
     fetch("/data/categoryFees.json")
@@ -106,23 +107,45 @@ const includeVAT = useMemo(() => {
     }
   }, [rate]);
 
+  // ====== ① 表示用：今の売値を円に直す ======
+  const currentRate = rate ?? 0;
+  const originalPriceNumber =
+    typeof sellingPrice === "number" ? sellingPrice : 0;
+  const approxJPY =
+    currentRate && originalPriceNumber ? originalPriceNumber * currentRate : 0;
 
-  // ★ 変更: final の送料は selectedShippingJPY を使用。method もモードで分岐
+  // ====== ② 計算用：GBP売値を作る（USD→GBP 変換を含む） ======
+  const sellingPriceGBPForCalc = useMemo(() => {
+    if (typeof sellingPrice !== "number") return 0;
+
+    // GBPモードのときはそのまま
+    if (currency === "GBP") return sellingPrice;
+
+    // USDモードのときは USD→GBP に変換
+    if (!usdRate || !gbpRate) return 0;
+    const usdToGbp = usdRate / gbpRate; // 1USD が何ポンドか
+    return sellingPrice * usdToGbp;
+  }, [sellingPrice, currency, usdRate, gbpRate]);
+
+  // 135ポンド超過フラグ（VATルール判断用の情報表示）
+  const overThreshold = sellingPriceGBPForCalc > 135;
+
+  // ====== ③ 最終利益計算（常に GBP ベース） ======
   const final =
-    typeof sellingPrice === "number" &&
+    sellingPriceGBPForCalc > 0 &&
     typeof costPrice === "number" &&
-    rate !== null &&
+    gbpRate !== null &&
     selectedShippingJPY !== null &&
     selectedCategoryFee !== ""
       ? calculateFinalProfitDetail({
-          sellingPriceGBP: sellingPrice,
+          sellingPriceGBP: sellingPriceGBPForCalc, // ★ GBPに統一
           costPriceJPY: costPrice,
-          shippingJPY: selectedShippingJPY, // ★ 変更
+          shippingJPY: selectedShippingJPY,
           categoryFeePercent: selectedCategoryFee as number,
           customsRatePercent: 1.35,
           payoneerFeePercent: 2,
-          includeVAT: includeVAT,
-          exchangeRateGBPtoJPY: rate,
+          includeVAT: true, // VATは135ポンド未満なら内部で自動適用
+          exchangeRateGBPtoJPY: gbpRate!,
         })
       : null;
 
@@ -388,21 +411,16 @@ const includeVAT = useMemo(() => {
             </p>
           </div>
 
-          {/* 利益結果 */}
+     {/* 利益結果 */}
           {rate !== null && sellingPrice !== "" && (
             <Result
-              originalPriceGBP={
-                typeof sellingPrice === "number" ? sellingPrice : 0
-              }
-              priceJPY={
-                typeof sellingPrice === "number" && rate !== null
-                  ? sellingPrice * rate
-                  : 0
-              }
+              currency={currency}
+              originalPrice={originalPriceNumber}
+              priceJPY={approxJPY}
               finalData={final}
-              rate={rate!}
-              includeVAT={includeVAT} // 自動判定
-              exchangeRateGBPtoJPY={rate!}
+              exchangeRateGBPtoJPY={gbpRate ?? 0}
+              exchangeRateUSDtoJPY={usdRate ?? 0}
+              overThreshold={overThreshold}
             />
           )}
 
