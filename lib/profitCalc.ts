@@ -24,11 +24,11 @@ export function calculateFinalProfitDetail({
   includeVAT = false,
   exchangeRateGBPtoJPY,
 }: {
-  sellingPriceGBP: number;   // 売値（￡）
+  sellingPriceGBP: number; // 売値（￡）
   costPriceJPY: number; // JPY
   shippingJPY: number; // JPY
   categoryFeePercent: number; // %
-  customsRatePercent: number;   // 関税 (%)
+  customsRatePercent: number; // 関税 (%)
   payoneerFeePercent: number;
   includeVAT?: boolean;
   exchangeRateGBPtoJPY: number;
@@ -38,9 +38,10 @@ export function calculateFinalProfitDetail({
   }
 
   // 1. VAT込み売値 (￡)
-  const adjustedPriceGBP = includeVAT && isUnder135GBP(sellingPriceGBP)
-    ? applyVAT(sellingPriceGBP)
-    : sellingPriceGBP;
+  const adjustedPriceGBP =
+    includeVAT && isUnder135GBP(sellingPriceGBP)
+      ? applyVAT(sellingPriceGBP)
+      : sellingPriceGBP;
   console.log("1. VAT込み売値 (￡):", adjustedPriceGBP);
 
   // 2. カテゴリ手数料 (￡)
@@ -73,7 +74,7 @@ export function calculateFinalProfitDetail({
   console.log("8.両替手数料(JPY)：", exchangeFeeJPY);
 
   // 9.正味JPY(GBP→JPY換算、両替手数料を引く)
-  const netSellingJPY = (netSellingGBP * exchangeRateGBPtoJPY) - exchangeFeeJPY;
+  const netSellingJPY = netSellingGBP * exchangeRateGBPtoJPY - exchangeFeeJPY;
 
   // 10. VAT分（￡ → JPY）
   const vatAmountGBP = adjustedPriceGBP - sellingPriceGBP;
@@ -82,20 +83,21 @@ export function calculateFinalProfitDetail({
   const vatToPayGBP = vatAmountGBP;
 
   // 11. 利益JPY (仕入れ値・送料を引く)
-  const netProfitJPY = netSellingJPY - vatAmountJPY - costPriceJPY - shippingJPY;
+  const netProfitJPY =
+    netSellingJPY - vatAmountJPY - costPriceJPY - shippingJPY;
 
   // 税還付金(JPY)　手数料還付金(JPY)
-  const exchangeAdjustmentJPY = costPriceJPY * 10 / 110;
+  const exchangeAdjustmentJPY = (costPriceJPY * 10) / 110;
 
-  const feeRebateJPY = (categoryFeeGBP * 10 / 100) * exchangeRateGBPtoJPY;
+  const feeRebateJPY = ((categoryFeeGBP * 10) / 100) * exchangeRateGBPtoJPY;
 
   // 12. 最終損益 (JPY)
   const finalProfitJPY = netProfitJPY + exchangeAdjustmentJPY + feeRebateJPY;
 
   // 13. 利益率
   const sellingPriceJPY = sellingPriceGBP * exchangeRateGBPtoJPY;
-  const profitMargin = sellingPriceJPY === 0 ? 0 : (finalProfitJPY / sellingPriceJPY) * 100;
-
+  const profitMargin =
+    sellingPriceJPY === 0 ? 0 : (finalProfitJPY / sellingPriceJPY) * 100;
 
   return {
     sellingPriceGBP,
@@ -116,7 +118,7 @@ export function calculateFinalProfitDetail({
     finalProfitJPY,
     exchangeAdjustmentJPY,
     feeRebateJPY,
-    profitMargin
+    profitMargin,
   };
 }
 
@@ -170,4 +172,78 @@ export function calculateProfitMargin(
 ): number {
   if (sellingPrice === 0) return 0;
   return (grossProfit / sellingPrice) * 100;
+}
+
+/**
+ * USD売値を「一度GBPに変換してVATルールを通し、
+ * その結果をまたUSD→JPYに変換」して最終利益を出す版
+ */
+export function calculateFinalProfitDetailFromUSD({
+  sellingPriceUSD, // 売値（$）
+  costPriceJPY, // 仕入れ（¥）
+  shippingJPY, // 送料（¥）
+  categoryFeePercent, // カテゴリ手数料 (%)
+  customsRatePercent, // 関税 (%)
+  payoneerFeePercent, // Payoneer手数料 (%)
+  includeVAT = false, // VAT込みで売るかどうか
+  exchangeRateUSDtoJPY, // 1 USD → ¥
+  exchangeRateGBPtoJPY, // 1 GBP → ¥
+}: {
+  sellingPriceUSD: number;
+  costPriceJPY: number;
+  shippingJPY: number;
+  categoryFeePercent: number;
+  customsRatePercent: number;
+  payoneerFeePercent: number;
+  includeVAT?: boolean;
+  exchangeRateUSDtoJPY: number;
+  exchangeRateGBPtoJPY: number;
+}) {
+  if (!exchangeRateUSDtoJPY || !exchangeRateGBPtoJPY) {
+    throw new Error(
+      "exchangeRateUSDtoJPY と exchangeRateGBPtoJPY が必要です！"
+    );
+  }
+
+  // --- ① USD⇔GBP のクロスレートを計算 ---
+  const usdToGbp = exchangeRateUSDtoJPY / exchangeRateGBPtoJPY; // 1 USD が何ポンドか
+  const gbpToUsd = exchangeRateGBPtoJPY / exchangeRateUSDtoJPY; // 1 GBP が何ドルか
+
+  // --- ② USD売値をGBPに変換して「VAT判定に使うGBP売値」にする ---
+  const sellingPriceGBP = sellingPriceUSD * usdToGbp;
+
+  // --- ③ 既存の GBP版ロジックに全部任せる ---
+  const base = calculateFinalProfitDetail({
+    sellingPriceGBP,
+    costPriceJPY,
+    shippingJPY,
+    categoryFeePercent,
+    customsRatePercent,
+    payoneerFeePercent,
+    includeVAT,
+    exchangeRateGBPtoJPY,
+  });
+
+  // base の中身:
+  // - adjustedPriceGBP, vatAmountGBP, vatToPayGBP, finalProfitJPY, などなど…
+
+  // --- ④ GBPで出た値を「表示用のUSDにも」変換してあげる ---
+  const adjustedPriceUSD = base.adjustedPriceGBP * gbpToUsd;
+  const vatAmountUSD = base.vatAmountGBP * gbpToUsd;
+  const vatToPayUSD = base.vatToPayGBP * gbpToUsd;
+
+  // 「元のドル売値を円に直した値」もあると便利なのでついでに返す
+  const sellingPriceUSDJPY = sellingPriceUSD * exchangeRateUSDtoJPY;
+
+  return {
+    // まずは既存のGBPベースの情報を全部そのまま返す
+    ...base,
+
+    // そこに USD / USD→JPY を追加する
+    sellingPriceUSD,
+    adjustedPriceUSD,
+    vatAmountUSD,
+    vatToPayUSD,
+    sellingPriceUSDJPY,
+  };
 }
