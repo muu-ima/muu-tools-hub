@@ -198,7 +198,7 @@ export default function Page() {
                 setCostPrice(num);
               }}
               placeholder="例: 5000"
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -223,7 +223,7 @@ export default function Page() {
                 setSellingPrice(num);
               }}
               placeholder="例: 200"
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             {rate !== null && sellingPrice !== "" && (
               <p className="mt-1 text-xs text-neutral-500">
@@ -293,7 +293,7 @@ export default function Page() {
                 {shippingMode === "auto" ? (
                   <fieldset className="space-y-3">
                     <div>
-                      <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                      <label className="block  text-sm font-semibold text-neutral-800 mb-1">
                         実重量 (g)
                       </label>
                       <input
@@ -307,7 +307,7 @@ export default function Page() {
                           )
                         }
                         placeholder="実重量"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -325,7 +325,7 @@ export default function Page() {
                             }))
                           }
                           placeholder="長さ"
-                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="number"
@@ -337,7 +337,7 @@ export default function Page() {
                             }))
                           }
                           placeholder="幅"
-                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="number"
@@ -349,7 +349,7 @@ export default function Page() {
                             }))
                           }
                           placeholder="高さ"
-                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                     </div>
@@ -375,7 +375,7 @@ export default function Page() {
                         setManualShipping(Number.isFinite(num) ? num : "");
                       }}
                       placeholder="例: 1200"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
                       ※ 手動入力時は重量/サイズは非表示になります
@@ -394,7 +394,7 @@ export default function Page() {
             <select
               value={selectedCategoryFee}
               onChange={(e) => setSelectedCategoryFee(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full bg-white px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">カテゴリを選択してください</option>
               {categoryOptions.map((cat) => (
