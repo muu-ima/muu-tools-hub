@@ -29,7 +29,7 @@ export default function FinalResult({
   // GBP → USD のレート（両方のレートが揃っているときだけ有効）
   const gbpToUsd =
     exchangeRateUSDtoJPY && exchangeRateGBPtoJPY
-      ? exchangeRateUSDtoJPY / exchangeRateGBPtoJPY
+      ? exchangeRateGBPtoJPY / exchangeRateUSDtoJPY
       : null;
 
   // GBP金額を表示通貨（GBP or USD）に変換
