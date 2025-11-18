@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -47,37 +47,61 @@ export default function ExchangeRate({
   };
 
   return (
-    <div className="bg-blue-100 border border-blue-400 rounded-md p-4 mb-4">
-      <h2 className="text-xl font-bold mb-2">現在の為替レート</h2>
+    <section className="mb-4">
+      <div className="bg-pink-50 border border-pink-200 rounded-2xl p-5 shadow-sm">
+        {/* タイトル＋説明＋通貨切替 */}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div>
+            <h2 className="text-base font-semibold tracking-wide text-pink-800">
+              現在の為替レート
+            </h2>
+            <p className="text-xs text-pink-500 mt-0.5">
+            使用する通貨レートをこちらで選択
+            </p>
+          </div>
 
-      <div className="flex gap-4 items-center mb-2">
-        <label>
-          <input
-            type="radio"
-            name="currency"
-            value="GBP"
-            checked={selectedCurrency === "GBP"}
-            onChange={() => handleCurrencyChange("GBP")}
-          />
-          <span className="ml-1">GBP → JPY</span>
-        </label>
+          {/* 桜色セグメントコントロール */}
+          <div className="inline-flex items-center bg-pink-100/80 rounded-full p-1 shadow-inner">
+            {(["GBP", "USD"] as Currency[]).map((cur) => (
+              <button
+                key={cur}
+                onClick={() => handleCurrencyChange(cur)}
+                className={`
+                  px-3 py-1 rounded-full text-xs font-medium transition-all
+                  ${
+                    selectedCurrency === cur
+                      ? "bg-white text-pink-600 shadow"
+                      : "text-pink-500 hover:text-pink-700"
+                  }
+                `}
+              >
+                {cur}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <label>
-          <input
-            type="radio"
-            name="currency"
-            value="USD"
-            checked={selectedCurrency === "USD"}
-            onChange={() => handleCurrencyChange("USD")}
-          />
-          <span className="ml-1">USD → JPY</span>
-        </label>
+        {/* レート表示 */}
+        <div className="mt-1 text-sm text-pink-800">
+          <div className="inline-flex items-baseline gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide">
+              {selectedCurrency} → JPY
+            </span>
+            <span className="text-[11px] text-pink-500">（生レート）</span>
+          </div>
+
+          <div className="mt-1 text-lg font-semibold">
+            {rates ? (
+              <>
+                {rates[selectedCurrency].toFixed(3)}
+                <span className="ml-1 text-sm">円</span>
+              </>
+            ) : (
+              <span className="text-pink-400 text-sm">取得中...</span>
+            )}
+          </div>
+        </div>
       </div>
-
-      <p>
-        {selectedCurrency} → JPY（生レート）：{" "}
-        {rates ? `${rates[selectedCurrency].toFixed(3)} 円` : "取得中..."}
-      </p>
-    </div>
+    </section>
   );
 }

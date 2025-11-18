@@ -158,23 +158,30 @@ export default function Page() {
     selectedShippingJPY !== null;
 
   return (
-    <div className="py-4">
+    <div className="py-2">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          ProfitCalc (UK)
+          <span className="bg-linear-to-r from-blue-400/60 to-blue-600/40 bg-clip-text text-transparent">
+            ProfitCalc (UK)
+          </span>
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
           仕入れ値・配送料・為替レートから利益率や詳細な数値を自動計算します
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
-        <div className="flex-1 flex flex-col space-y-4">
-          {/* 為替レート表示コンポーネント */}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+        {/* 左カラム */}
+        <div className="flex-1 flex flex-col space-y-5">
+          {/* 為替レート表示コンポーネント（中でピンクカード） */}
           <ExchangeRate onRateChange={handleRateChange} />
 
+          {/* 仕入れ値 */}
           <div>
-            <label className="block font-semibold mb-1">仕入れ値 (円) </label>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1">
+              仕入れ値 (円)
+            </label>
             <input
               type="number"
               step="10"
@@ -190,13 +197,14 @@ export default function Page() {
                 if (num < 0) num = 0;
                 setCostPrice(num);
               }}
-              placeholder="仕入れ値"
-              className="w-full px-3 py-2 border rounded-md"
+              placeholder="例: 5000"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
+          {/* 売値 */}
           <div>
-            <label className="block font-semibold mb-1">
+            <label className="block text-sm font-semibold text-neutral-800 mb-1">
               売値 ({currency === "GBP" ? "£" : "$"})
             </label>
             <input
@@ -214,17 +222,21 @@ export default function Page() {
                 num = Math.floor(num * 100) / 100; // 2桁固定
                 setSellingPrice(num);
               }}
-              placeholder="売値"
-              className="w-full px-3 py-2 border rounded-md"
+              placeholder="例: 200"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             {rate !== null && sellingPrice !== "" && (
-              <p>概算円価格：約 {Math.round(Number(sellingPrice) * rate)} 円</p>
+              <p className="mt-1 text-xs text-neutral-500">
+                概算円価格：約 {Math.round(Number(sellingPrice) * rate)} 円
+              </p>
             )}
           </div>
 
-          {/* ★ 追加: トグルスイッチ（自動/手動） */}
-          <div className="flex items-center justify-between mt-2 mb-0">
-            <span className="block font-semibold">配送料モード</span>
+          {/* 配送料モードトグル */}
+          <div className="flex items-center justify-between mt-2">
+            <span className="block text-sm font-semibold text-neutral-800">
+              配送料モード
+            </span>
             <button
               type="button"
               role="switch"
@@ -232,7 +244,7 @@ export default function Page() {
               onClick={() =>
                 setShippingMode((m) => (m === "auto" ? "manual" : "auto"))
               }
-              className="relative inline-flex items-center h-9 w-36 rounded-full bg-gray-200 transition"
+              className="relative inline-flex items-center h-9 w-36 rounded-full bg-neutral-200 transition"
             >
               {/* ノブ */}
               <motion.span
@@ -246,8 +258,8 @@ export default function Page() {
               <span
                 className={`w-1/2 text-center text-sm transition ${
                   shippingMode === "auto"
-                    ? "font-semibold text-gray-900"
-                    : "text-gray-500"
+                    ? "font-semibold text-neutral-900"
+                    : "text-neutral-500"
                 }`}
               >
                 自動
@@ -255,8 +267,8 @@ export default function Page() {
               <span
                 className={`w-1/2 text-center text-sm transition ${
                   shippingMode === "manual"
-                    ? "font-semibold text-gray-900"
-                    : "text-gray-500"
+                    ? "font-semibold text-neutral-900"
+                    : "text-neutral-500"
                 }`}
               >
                 手動
@@ -264,8 +276,8 @@ export default function Page() {
             </button>
           </div>
 
-          {/* ★ 追加: 自動フォーム or 手動フォーム（切替） */}
-          <div className="mt-2 rounded-lg min-h-[150px]">
+          {/* 自動フォーム or 手動フォーム（切替） */}
+          <div className="mt-1 rounded-lg min-h-[150px]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={shippingMode}
@@ -279,10 +291,10 @@ export default function Page() {
                 }}
               >
                 {shippingMode === "auto" ? (
-                  <fieldset>
+                  <fieldset className="space-y-3">
                     <div>
-                      <label className="block font-semibold mb-1">
-                        実重量 (g){" "}
+                      <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                        実重量 (g)
                       </label>
                       <input
                         type="number"
@@ -295,11 +307,11 @@ export default function Page() {
                           )
                         }
                         placeholder="実重量"
-                        className="w-full px-3 py-2 border rounded-md"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    <div className="mt-3">
-                      <label className="block font-semibold mb-1">
+                    <div>
+                      <label className="block text-sm font-semibold text-neutral-800 mb-1">
                         サイズ (cm)
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -313,7 +325,7 @@ export default function Page() {
                             }))
                           }
                           placeholder="長さ"
-                          className="px-2 py-1 border rounded-md"
+                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="number"
@@ -325,7 +337,7 @@ export default function Page() {
                             }))
                           }
                           placeholder="幅"
-                          className="px-2 py-1 border rounded-md"
+                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <input
                           type="number"
@@ -337,14 +349,14 @@ export default function Page() {
                             }))
                           }
                           placeholder="高さ"
-                          className="px-2 py-1 border rounded-md"
+                          className="px-2 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                     </div>
                   </fieldset>
                 ) : (
-                  <div className="mt-3">
-                    <label className="block font-semibold mb-1">
+                  <div className="mt-2">
+                    <label className="block text-sm font-semibold text-neutral-800 mb-1">
                       配送料（円・手動）
                     </label>
                     <input
@@ -363,9 +375,9 @@ export default function Page() {
                         setManualShipping(Number.isFinite(num) ? num : "");
                       }}
                       placeholder="例: 1200"
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-neutral-500 mt-1">
                       ※ 手動入力時は重量/サイズは非表示になります
                     </p>
                   </div>
@@ -374,12 +386,15 @@ export default function Page() {
             </AnimatePresence>
           </div>
 
+          {/* カテゴリ手数料 */}
           <div>
-            <label className="block font-semibold mb-1">カテゴリ手数料 </label>
+            <label className="block text-sm font-semibold text-neutral-800 mb-1">
+              カテゴリ手数料
+            </label>
             <select
               value={selectedCategoryFee}
               onChange={(e) => setSelectedCategoryFee(Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">カテゴリを選択してください</option>
               {categoryOptions.map((cat) => (
@@ -392,9 +407,16 @@ export default function Page() {
         </div>
 
         {/* 右カラム */}
-        <div className="flex-1 flex flex-col space-y-4">
-          {/* ★ 変更: 表示も selectedShippingJPY / モード名を使用 */}
-          <div className="w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <div className="flex-1 flex flex-col space-y-5">
+          {/* 配送方法 */}
+          <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm space-y-1 text-sm text-neutral-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block h-4 w-1 rounded-full bg-blue-500" />
+              <h2 className="text-sm font-semibold text-neutral-800">
+                配送方法
+              </h2>
+            </div>
+
             <p>
               配送方法:{" "}
               {shippingMode === "manual"
@@ -403,6 +425,7 @@ export default function Page() {
                 ? "計算中..."
                 : result.method}
             </p>
+
             <p>
               配送料:{" "}
               {selectedShippingJPY !== null
@@ -411,7 +434,7 @@ export default function Page() {
             </p>
           </div>
 
-     {/* 利益結果 */}
+          {/* 利益結果 */}
           {rate !== null && sellingPrice !== "" && (
             <Result
               currency={currency}
@@ -434,32 +457,31 @@ export default function Page() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.5 }}
-                className={`btn-primary ${
+                className={`mt-2 w-full px-8 py-4 text-lg rounded-full font-semibold ${
                   isEnabled
-                    ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                    : "bg-gray-400 cursor-not-allowed text-gray-200"
-                } px-8 py-4 text-lg rounded-full`}
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-neutral-300 text-neutral-200 cursor-not-allowed"
+                }`}
               >
                 最終利益の詳細を見る
               </motion.button>
             )}
           </AnimatePresence>
         </div>
-
-        {final && (
-          <FinalResultModal
-            isOpen={isOpen}
-            onClose={() => setIsOpen(false)}
-            // ★ 変更: モードに応じた表示・値を渡す
-            shippingMethod={
-              shippingMode === "manual" ? "手動入力" : result?.method || ""
-            }
-            shippingJPY={selectedShippingJPY || 0}
-            data={final}
-            exchangeRateGBPtoJPY={rate!}
-          />
-        )}
       </div>
+
+      {final && (
+        <FinalResultModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          shippingMethod={
+            shippingMode === "manual" ? "手動入力" : result?.method || ""
+          }
+          shippingJPY={selectedShippingJPY || 0}
+          data={final}
+          exchangeRateGBPtoJPY={rate!}
+        />
+      )}
     </div>
   );
 }
