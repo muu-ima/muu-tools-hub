@@ -174,6 +174,7 @@ export default function Page() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
         {/* 左カラム */}
         <div className="flex-1 flex flex-col space-y-5">
+          
           {/* 為替レート表示コンポーネント（中でピンクカード） */}
           <ExchangeRate onRateChange={handleRateChange} />
 
@@ -479,7 +480,9 @@ export default function Page() {
           }
           shippingJPY={selectedShippingJPY || 0}
           data={final}
-          exchangeRateGBPtoJPY={rate!}
+          exchangeRateGBPtoJPY={gbpRate!}
+          currency={currency}
+          exchangeRateUSDtoJPY={usdRate ?? 0}
         />
       )}
     </div>
