@@ -20,7 +20,7 @@ export default function ToolsLayout({
   const isRoot = pathname === "/tools";
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+    <div className="min-h-screen flex flex-col bg-(--background) text-(--foreground)">
       {/* ▼ 共通ヘッダー */}
       <header className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b border-neutral-200">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -58,8 +58,8 @@ export default function ToolsLayout({
       </header>
 
       {/* ▼ 各ページ本体 */}
-      <main className="flex-1 px-4 py-4 md:py-6">
-        <div className="mx-auto max-w-7xl">{children}</div>
+      <main className="flex-1 px-4 py-2 md:py-4">
+        <div className="mx-auto max-w-screen-2xl">{children}</div>
       </main>
       {/* ▼ 共通フッター（必要なら） */}
       <footer className="py-6 text-center text-xs text-neutral-400">
