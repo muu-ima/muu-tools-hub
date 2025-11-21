@@ -31,6 +31,7 @@ export function useProfitCalc({
   usdRate,
   selectedShippingJPY,
 }: useProfitCalcArgs) {
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [categoryOptions, setCategoryOptions] = useState<CategoryFeeType[]>([]);
   const [selectedCategoryFee, setSelectedCategoryFee] = useState<number | "">(
     ""
@@ -38,11 +39,17 @@ export function useProfitCalc({
 
   // カテゴリ手数料マスタ読込
   useEffect(() => {
+
     fetch("/data/categoryFees.json")
       .then((res) => res.json())
-      .then((data) => setCategoryOptions(data))
+      .then((data) => { 
+          setCategoryOptions(data);
+  })
       .catch((error) => {
         console.error("categoryFee.json のロードに失敗しました。", error);
+      })
+      .finally(() =>{
+        setLoadingCategories(false);
       });
   }, []);
 
@@ -117,5 +124,6 @@ export function useProfitCalc({
     overThreshold,
     final,
     isEnabled,
+    loadingCategories,  
   };
 }
