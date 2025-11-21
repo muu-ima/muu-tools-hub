@@ -1,4 +1,4 @@
-// components/ModeSwitcherFab.tsx
+// components/ModeSweitcherFab.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,20 +16,32 @@ export default function ModeSwitcherFab({
 
   return (
     <>
-      {/* ▼ 右下ボタン */}
-      <button
-        onClick={() => setOpen((prev) => !prev)}
+      {/* ▼ 右下のラッパー（位置 + 波紋だけ担当） */}
+      <div
         className="
           fixed bottom-6 right-6 z-50
-          w-14 h-14 rounded-full
-          bg-linear-to-br from-blue-500 to-blue-700
-          shadow-lg hover:shadow-2xl
-          flex items-center justify-center
-          transition-all duration-200
+          ripple-pulse
         "
       >
-        <ChatIcon size={30} color="#fff" />
-      </button>
+        {/* ▼ 実際のボタン（相対位置・見た目担当） */}
+        <button
+          onClick={() => setOpen((prev) => !prev)}
+          className={`
+          w-14 h-14 rounded-full
+          bg-linear-to-br from-blue-500 to-blue-700
+          shadow-lg
+          flex items-center justify-center
+          transition-all duration-300
+          cursor-pointer
+          relative
+          ${open ? "scale-110 shadow-2xl" : "hover:scale-105 hover:shadow-xl"}
+        `}
+        >
+          <div className="animate-bounce">
+            <ChatIcon size={30} color="#fff" />
+          </div>
+        </button>
+      </div>
 
       {/* ▼ モード選択ウィンドウ */}
       <AnimatePresence>
@@ -41,8 +53,8 @@ export default function ModeSwitcherFab({
             transition={{ duration: 0.22 }}
             className="
               fixed bottom-24 right-6 z-50
-              w-64 rounded-xl bg-white shadow-xl border
-              p-4 space-y-3
+              w-96 rounded-xl bg-white shadow-xl border
+              p-4 space-y-3 backdrop-blur-sm
             "
           >
             <h3 className="text-sm font-semibold text-neutral-700">
@@ -55,7 +67,7 @@ export default function ModeSwitcherFab({
                   onSelect("normal");
                   setOpen(false);
                 }}
-                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm"
+                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🔵 順行計算（Normal）
               </button>
@@ -65,7 +77,7 @@ export default function ModeSwitcherFab({
                   onSelect("reverse");
                   setOpen(false);
                 }}
-                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm"
+                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🔁 逆算ロジック（Reverse）
               </button>
@@ -75,7 +87,7 @@ export default function ModeSwitcherFab({
                   onSelect("platform");
                   setOpen(false);
                 }}
-                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm"
+                className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🟣 最安値モード（Platform）
               </button>
