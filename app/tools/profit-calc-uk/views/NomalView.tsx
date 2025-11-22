@@ -13,17 +13,23 @@ import { useShipping } from "@/app/tools/profit-calc-uk/hooks/useShipping";
 import { useProfitCalc } from "@/app/tools/profit-calc-uk/hooks/useProfitCalc";
 
 export default function Page() {
+  // ====== 8秒タイムアウト ======
   const [timeoutReached, setTimeoutReached] = useState(false);
 
-  // ====== 為替まわり ======
+  useEffect(() => {
+    const timeout = setTimeout(() => setTimeoutReached(true), 8000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // ====== 為替 ======
   const { rate, currency, gbpRate, usdRate, handleRateChange } =
     useExchangeRate();
 
-  // ====== フォーム入力（売値・仕入れ値） ======
+  // ====== 入力 ======
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPrice, setSellingPrice] = useState<number | "">("");
 
-  // ====== 配送（自動／手動） ======
+  // ====== 配送 ======
   const {
     weight,
     setWeight,
@@ -37,7 +43,7 @@ export default function Page() {
     shippingMethodLabel,
   } = useShipping();
 
-  // ====== 利益計算 & カテゴリマスタ ======
+  // ====== 利益計算・カテゴリ ======
   const {
     categoryOptions,
     selectedCategoryFee,
@@ -57,26 +63,20 @@ export default function Page() {
     selectedShippingJPY,
   });
 
-  // --- コアロジックの準備完了フラグ ---
+  // ====== ローディング判定 ======
   const coreReady = rate !== null && categoryOptions.length > 0;
-
-  // --- 念のためタイムアウト（8秒）で強制解除 ---
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimeoutReached(true);
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // --- 全項目スケルトンを出すかどうかの共通フラグ ---
   const isLoadingAll = !coreReady && !timeoutReached;
 
-  // モーダル制御
+  // ====== Modal ======
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="py-2">
+    <div
+      className={`
+      py-2 transition-all duration-300
+      ${isLoadingAll ? "blur-sm opacity-60" : "opacity-100 blur-0"}
+    `}
+    >
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -87,21 +87,42 @@ export default function Page() {
         <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
           仕入れ値・配送料・為替レートから利益率や詳細な数値を自動計算します
         </p>
+
+        {/* Blur中 loader */}
+        {isLoadingAll && (
+          <div className="mt-2 inline-flex items-center gap-2 text-xs text-neutral-600">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+            <span>読み込み中...</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
         {/* 左カラム */}
         <div className="flex-1 flex flex-col space-y-5">
-          {/* 為替レート（ピンクカード） */}
+          {/* 為替（常に開ける） */}
           <ExchangeRate onRateChange={handleRateChange} />
 
           {/* 仕入れ値 */}
           <div>
             {isLoadingAll ? (
               <>
-                {/* ラベル */}
                 <div className="h-4 w-28 rounded bg-neutral-200 animate-pulse mb-2" />
-                {/* 入力欄 */}
                 <div className="h-10 w-full rounded-md bg-neutral-200 animate-pulse" />
               </>
             ) : (
@@ -116,16 +137,12 @@ export default function Page() {
                   value={costPrice}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    if (raw === "") {
-                      setCostPrice("");
-                      return;
-                    }
-                    let num = Number(raw);
-                    if (num < 0) num = 0;
+                    if (raw === "") return setCostPrice("");
+                    const num = Math.max(0, Number(raw));
                     setCostPrice(num);
                   }}
                   placeholder="例: 5000"
-                  className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </>
             )}
@@ -133,82 +150,83 @@ export default function Page() {
 
           {/* 売値 */}
           <div>
-            <label className="block text-sm font-semibold text-neutral-800 mb-1">
-              売値 ({currency === "GBP" ? "£" : "$"})
-            </label>
             {isLoadingAll ? (
-              <div className="h-10 w-full rounded-md bg-neutral-200 animate-pulse" />
+              <>
+                <div className="h-4 w-20 rounded bg-neutral-200 animate-pulse mb-2" />
+                <div className="h-10 w-full rounded-md bg-neutral-200 animate-pulse" />
+              </>
             ) : (
-              <input
-                type="number"
-                step="0.01"
-                value={sellingPrice}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === "") {
-                    setSellingPrice("");
-                    return;
-                  }
-                  let num = Number(raw);
-                  if (num < 0) num = 0;
-                  num = Math.floor(num * 100) / 100;
-                  setSellingPrice(num);
-                }}
-                placeholder="例: 200"
-                className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <>
+                <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                  売値 ({currency === "GBP" ? "£" : "$"})
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={sellingPrice}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") return setSellingPrice("");
+                    let num = Math.max(0, Number(raw));
+                    num = Math.floor(num * 100) / 100;
+                    setSellingPrice(num);
+                  }}
+                  placeholder="例: 200"
+                  className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </>
             )}
           </div>
 
-          {/* 配送料モードトグル */}
-          {isLoadingAll ? (
-            <div className="mt-2 h-9 w-40 rounded-full bg-neutral-200 animate-pulse" />
-          ) : (
-            <div className="flex items-center justify-between mt-2">
-              <span className="block text-sm font-semibold text-neutral-800">
-                配送料モード
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={shippingMode === "manual"}
-                onClick={() =>
-                  setShippingMode((m) => (m === "auto" ? "manual" : "auto"))
-                }
-                className="relative inline-flex items-center h-9 w-36 rounded-full bg-neutral-200 transition"
-              >
-                {/* ノブ */}
-                <motion.span
-                  layout
-                  className="absolute h-7 w-7 rounded-full bg-white shadow"
-                  style={{ left: 4, top: 4 }}
-                  animate={{ x: shippingMode === "manual" ? 96 : 0 }}
-                  transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                />
-                {/* ラベル */}
-                <span
-                  className={`w-1/2 text-center text-sm transition ${
-                    shippingMode === "auto"
-                      ? "font-semibold text-neutral-900"
-                      : "text-neutral-500"
-                  }`}
-                >
-                  自動
+          {/* 配送料モード */}
+          <div>
+            {isLoadingAll ? (
+              <div className="mt-2 h-9 w-40 rounded-full bg-neutral-200 animate-pulse" />
+            ) : (
+              <div className="flex items-center justify-between mt-2">
+                <span className="block text-sm font-semibold text-neutral-800">
+                  配送料モード
                 </span>
-                <span
-                  className={`w-1/2 text-center text-sm transition ${
-                    shippingMode === "manual"
-                      ? "font-semibold text-neutral-900"
-                      : "text-neutral-500"
-                  }`}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={shippingMode === "manual"}
+                  onClick={() =>
+                    setShippingMode((m) => (m === "auto" ? "manual" : "auto"))
+                  }
+                  className="relative inline-flex items-center h-9 w-36 rounded-full bg-neutral-200 transition"
                 >
-                  手動
-                </span>
-              </button>
-            </div>
-          )}
+                  <motion.span
+                    layout
+                    className="absolute h-7 w-7 rounded-full bg-white shadow"
+                    style={{ left: 4, top: 4 }}
+                    animate={{ x: shippingMode === "manual" ? 96 : 0 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                  <span
+                    className={`w-1/2 text-center text-sm transition ${
+                      shippingMode === "auto"
+                        ? "font-semibold text-neutral-900"
+                        : "text-neutral-500"
+                    }`}
+                  >
+                    自動
+                  </span>
+                  <span
+                    className={`w-1/2 text-center text-sm transition ${
+                      shippingMode === "manual"
+                        ? "font-semibold text-neutral-900"
+                        : "text-neutral-500"
+                    }`}
+                  >
+                    手動
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
 
-          {/* 自動フォーム or 手動フォーム（切替） */}
+          {/* 配送料フォーム */}
           <div className="mt-1 rounded-lg min-h-[150px]">
             {isLoadingAll ? (
               <div className="h-36 w-full rounded-lg bg-neutral-200 animate-pulse" />
@@ -220,15 +238,12 @@ export default function Page() {
                   animate={{ opacity: 1, y: 0, height: "auto" }}
                   exit={{ opacity: 0, y: 12, height: 0 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
-                  style={{
-                    overflow: "hidden",
-                    willChange: "opacity, transform, height",
-                  }}
+                  style={{ overflow: "hidden" }}
                 >
                   {shippingMode === "auto" ? (
                     <fieldset className="space-y-3">
                       <div>
-                        <label className="block  text-sm font-semibold text-neutral-800 mb-1">
+                        <label className="block text-sm font-semibold text-neutral-800 mb-1">
                           実重量 (g)
                         </label>
                         <input
@@ -241,10 +256,10 @@ export default function Page() {
                                 : Number(e.target.value)
                             )
                           }
-                          placeholder="実重量"
-                          className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
                         />
                       </div>
+
                       <div>
                         <label className="block text-sm font-semibold text-neutral-800 mb-1">
                           サイズ (cm)
@@ -260,7 +275,7 @@ export default function Page() {
                               }))
                             }
                             placeholder="長さ"
-                            className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
                           />
                           <input
                             type="number"
@@ -272,7 +287,7 @@ export default function Page() {
                               }))
                             }
                             placeholder="幅"
-                            className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
                           />
                           <input
                             type="number"
@@ -284,33 +299,26 @@ export default function Page() {
                               }))
                             }
                             placeholder="高さ"
-                            className="px-2 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
                           />
                         </div>
                       </div>
                     </fieldset>
                   ) : (
-                    <div className="mt-2">
+                    <div>
                       <label className="block text-sm font-semibold text-neutral-800 mb-1">
                         配送料（円・手動）
                       </label>
                       <input
                         type="number"
-                        inputMode="numeric"
-                        min={0}
-                        step={10}
                         value={manualShipping}
                         onChange={(e) => {
                           const raw = e.target.value;
-                          if (raw === "") {
-                            setManualShipping("");
-                            return;
-                          }
+                          if (raw === "") return setManualShipping("");
                           const num = Math.max(0, Number(raw));
-                          setManualShipping(Number.isFinite(num) ? num : "");
+                          setManualShipping(num);
                         }}
-                        placeholder="例: 1200"
-                        className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
                       />
                       <p className="text-xs text-neutral-500 mt-1">
                         ※ 手動入力時は重量/サイズは非表示になります
@@ -324,32 +332,44 @@ export default function Page() {
 
           {/* カテゴリ手数料 */}
           <div>
-            <label className="block text-sm font-semibold text-neutral-800 mb-1">
-              カテゴリ手数料
-            </label>
             {isLoadingAll ? (
-              <div className="h-10 w-full rounded-md bg-neutral-200 animate-pulse" />
+              <>
+                <div className="h-4 w-28 rounded bg-neutral-200 animate-pulse mb-2" />
+                <div className="h-10 w-full rounded-md bg-neutral-200 animate-pulse" />
+              </>
             ) : (
-              <select
-                value={selectedCategoryFee}
-                onChange={(e) => setSelectedCategoryFee(Number(e.target.value))}
-                className="w-full bg-white px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">カテゴリを選択してください</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat.label} value={cat.value}>
-                    {cat.label} ({cat.value}%)
-                  </option>
-                ))}
-              </select>
+              <>
+                <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                  カテゴリ手数料
+                </label>
+                <select
+                  value={selectedCategoryFee}
+                  onChange={(e) =>
+                    setSelectedCategoryFee(Number(e.target.value))
+                  }
+                  className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                >
+                  <option value="">カテゴリを選択してください</option>
+                  {categoryOptions.map((cat) => (
+                    <option key={cat.label} value={cat.value}>
+                      {cat.label} ({cat.value}%)
+                    </option>
+                  ))}
+                </select>
+              </>
             )}
           </div>
         </div>
+
         {/* 右カラム */}
         <div className="flex-1 flex flex-col space-y-5">
           {/* 配送方法 */}
           {isLoadingAll ? (
-            <div className="h-28 w-full rounded-xl bg-neutral-200 animate-pulse" />
+            <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm space-y-3">
+              <div className="h-4 w-16 bg-neutral-200 rounded animate-pulse" />
+              <div className="h-4 w-28 bg-neutral-200 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-neutral-200 rounded animate-pulse" />
+            </div>
           ) : (
             <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm space-y-1 text-sm text-neutral-700">
               <div className="flex items-center gap-2 mb-1">
@@ -358,9 +378,7 @@ export default function Page() {
                   配送方法
                 </h2>
               </div>
-
               <p>配送方法: {shippingMethodLabel}</p>
-
               <p>
                 配送料:{" "}
                 {selectedShippingJPY !== null
@@ -371,41 +389,52 @@ export default function Page() {
           )}
 
           {/* 利益結果 */}
-          {rate !== null && sellingPrice !== "" && (
-            <Result
-              currency={currency}
-              originalPrice={originalPriceNumber}
-              priceJPY={approxJPY}
-              finalData={final}
-              exchangeRateGBPtoJPY={gbpRate ?? 0}
-              exchangeRateUSDtoJPY={usdRate ?? 0}
-              overThreshold={overThreshold}
-            />
+          {isLoadingAll ? (
+            <div className="h-48 w-full rounded-xl bg-neutral-200 animate-pulse" />
+          ) : (
+            rate !== null &&
+            sellingPrice !== "" && (
+              <Result
+                currency={currency}
+                originalPrice={originalPriceNumber}
+                priceJPY={approxJPY}
+                finalData={final}
+                exchangeRateGBPtoJPY={gbpRate ?? 0}
+                exchangeRateUSDtoJPY={usdRate ?? 0}
+                overThreshold={overThreshold}
+              />
+            )
           )}
 
-          <AnimatePresence>
-            {final && (
-              <motion.button
-                key="final-profit-button"
-                onClick={() => setIsOpen(true)}
-                disabled={!isEnabled}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.5 }}
-                className={`mt-2 w-full px-8 py-4 text-lg rounded-full font-semibold ${
-                  isEnabled
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-neutral-300 text-neutral-200 cursor-not-allowed"
-                }`}
-              >
-                最終利益の詳細を見る
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {/* 最終利益ボタン */}
+          {isLoadingAll ? (
+            <div className="h-12 w-full rounded-full bg-neutral-200 animate-pulse" />
+          ) : (
+            <AnimatePresence>
+              {final && (
+                <motion.button
+                  key="final-profit-button"
+                  onClick={() => setIsOpen(true)}
+                  disabled={!isEnabled}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.5 }}
+                  className={`mt-2 w-full px-8 py-4 text-lg rounded-full font-semibold ${
+                    isEnabled
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-neutral-300 text-neutral-200 cursor-not-allowed"
+                  }`}
+                >
+                  最終利益の詳細を見る
+                </motion.button>
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </div>
 
+      {/* モーダル */}
       {final && (
         <FinalResultModal
           isOpen={isOpen}
