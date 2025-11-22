@@ -1,9 +1,10 @@
 // app/tools/profit-calc-uk/views/NomalView.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
 import ExchangeRate from "@/app/tools/profit-calc-uk/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-uk/components/Result";
 import FinalResultModal from "@/app/tools/profit-calc-uk/components/FinalResultModal";
@@ -13,13 +14,7 @@ import { useShipping } from "@/app/tools/profit-calc-uk/hooks/useShipping";
 import { useProfitCalc } from "@/app/tools/profit-calc-uk/hooks/useProfitCalc";
 
 export default function Page() {
-  // ====== 8秒タイムアウト ======
-  const [timeoutReached, setTimeoutReached] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setTimeoutReached(true), 8000);
-    return () => clearTimeout(timeout);
-  }, []);
+  const timeoutReached = useTimeout(5000);
 
   // ====== 為替 ======
   const { rate, currency, gbpRate, usdRate, handleRateChange } =
