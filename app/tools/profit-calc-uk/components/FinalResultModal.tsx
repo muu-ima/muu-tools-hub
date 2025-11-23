@@ -175,12 +175,12 @@ export default function FinalResult({
           <div className="space-y-2">
             <p>
               <span className="font-semibold">
-                ■ 利益（売上 - 仕入 - 送料）:
+                ■ 利益（売上 - 総コスト）:
               </span>
               ¥{Math.ceil(data.netProfitJPY).toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold text-green-700">■ 最終利益:</span>
+              <span className="font-semibold text-green-700">■ 最終利益(還付金付与):</span>
               <span className="text-green-600 font-bold">
                 ¥{Math.ceil(data.finalProfitJPY).toLocaleString()}
               </span>
