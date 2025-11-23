@@ -15,6 +15,7 @@ import { useProfitCalc } from "@/app/tools/profit-calc-uk/hooks/useProfitCalc";
 
 // eBay プラットフォーム想定の VAT 率（UK 20%）
 const VAT_RATE = 0.2;
+const VAT_THRESHOLD_GBP = 135;
 
 export default function Page() {
   const timeoutReached = useTimeout(5000);
@@ -27,9 +28,25 @@ export default function Page() {
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPriceVAT, setSellingPriceVAT] = useState<number | "">("");
 
-  const sellingPriceExVAT:number | "" =
-   sellingPriceVAT === "" ? "" : Math.floor((Number(sellingPriceVAT) / (1 + VAT_RATE)) * 100) / 100;
+  let sellingPriceExVAT: number | "" = "";
 
+  if (sellingPriceVAT === "") {
+    sellingPriceExVAT = "";
+  } else {
+    const grossGBP = Number(sellingPriceVAT);
+
+    // ① いったん「VAT込み」と仮定して VAT抜き候補を出す
+    const tentativeExVAT = grossGBP / (1 + VAT_RATE);
+
+    if (tentativeExVAT <= VAT_THRESHOLD_GBP) {
+      // ② 135ポンド以内 → プラットフォームでVAT徴収される想定
+      sellingPriceExVAT = Math.floor(tentativeExVAT * 100) / 100;
+    } else {
+      // ③ 135ポンド超え → プラットフォームでVAT徴収されない想定
+      // 入力値をそのまま VAT抜きとして扱う（/1.2 しない）
+      sellingPriceExVAT = grossGBP;
+    }
+  }
   // ====== 配送 ======
   const {
     weight,
@@ -86,8 +103,8 @@ export default function Page() {
           </span>
         </h1>
         <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
-          売値は「VAT込み」で入力します。内部では自動的に VAT を控除し、
-          eBay 手数料・送料・為替・VATルールを加味した利益を計算します。
+          売値は「VAT込み」で入力します。内部では自動的に VAT を控除し、 eBay
+          手数料・送料・為替・VATルールを加味した利益を計算します。
         </p>
 
         {/* Blur中 loader */}
@@ -177,8 +194,11 @@ export default function Page() {
                   className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="mt-1 text-xs text-neutral-500">
-                    入力された金額から自動で VAT({VAT_RATE * 100}%)
-                    を控除して計算します。 (中身は eBay コアロジック)
+                  135ポンド以下の金額は「VAT込み」として自動で VAT(
+                  {VAT_RATE * 100}%)
+                  を控除して計算します。<br />135ポンドを超える金額は、プラットフォーム側で
+                  VATが徴収されない想定で「VAT抜き価格」として扱います。<br />
+                  （中身は通常版と同じ eBay コアロジックです）
                 </p>
               </>
             )}

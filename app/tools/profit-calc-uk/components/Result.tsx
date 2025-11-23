@@ -7,14 +7,14 @@ type FinalProfitDetail = {
   adjustedPriceGBP: number;
   vatAmountGBP: number;
   vatAmountJPY?: number;
-   vatToPayGBP?: number;
+  vatToPayGBP?: number;
 };
 
 type ResultProps = {
-  currency: "GBP" | "USD";      // 今どの通貨モードか
-  originalPrice: number;        // 現在の通貨での売値
-  priceJPY: number;             // 現在の通貨→円の概算
-  overThreshold: boolean;       // 135ポンド超過か（親で計算済み）
+  currency: "GBP" | "USD"; // 今どの通貨モードか
+  originalPrice: number; // 現在の通貨での売値
+  priceJPY: number; // 現在の通貨→円の概算
+  overThreshold: boolean; // 135ポンド超過か（親で計算済み）
 
   exchangeRateGBPtoJPY: number; // GBP→JPY
   exchangeRateUSDtoJPY?: number; // USD→JPY（USD表示用に使う）
@@ -40,10 +40,10 @@ export default function Result({
   const vatApplied = !!finalData && finalData.vatAmountGBP > 0.0001;
 
   // GBP → USD のクロスレート（両方のレートが揃っているときだけ有効）
-  const gbpToUsd = 
-  exchangeRateUSDtoJPY && exchangeRateGBPtoJPY > 0
-  ? exchangeRateGBPtoJPY / exchangeRateUSDtoJPY
-  : null;
+  const gbpToUsd =
+    exchangeRateUSDtoJPY && exchangeRateGBPtoJPY > 0
+      ? exchangeRateGBPtoJPY / exchangeRateUSDtoJPY
+      : null;
 
   // GBP金額を表示通貨 (GBP or USD) に変換
   const gbpToPrimary = (gbpAmount: number) => {
@@ -117,6 +117,9 @@ export default function Result({
             <p>
               <span className="font-semibold">■ 差額納付VAT:</span> {symbol}
               {gbpToPrimary(finalData.vatToPayGBP).toFixed(2)} / ¥
+              {Math.round(
+                finalData.sellingPriceGBP * exchangeRateGBPtoJPY
+              ).toLocaleString()}
             </p>
           )}
         </>
