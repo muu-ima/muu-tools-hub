@@ -52,8 +52,8 @@ export default function ModeSwitcherFab({
             exit={{ opacity: 0, scale: 0.85, y: 20 }}
             transition={{ duration: 0.22 }}
             className="
-              fixed bottom-24 right-6 z-50
-              w-96 rounded-xl bg-white shadow-xl border
+              fixed bottom-24 right-5 z-50
+              w-64 rounded-xl bg-white shadow-xl border
               p-4 space-y-3 backdrop-blur-sm
             "
           >
