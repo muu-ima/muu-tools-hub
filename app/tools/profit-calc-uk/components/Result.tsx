@@ -3,12 +3,11 @@
 import React from "react";
 
 type FinalProfitDetail = {
-  vatAmountGBP: number;
-  vatAmountJPY?: number;
-  vatToPayGBP?: number;
-  vatToPayJPY?: number;
   sellingPriceGBP: number;
   adjustedPriceGBP: number;
+  vatAmountGBP: number;
+  vatAmountJPY?: number;
+   vatToPayGBP?: number;
 };
 
 type ResultProps = {
@@ -40,31 +39,34 @@ export default function Result({
   // 実際に VAT が発生しているかどうか
   const vatApplied = !!finalData && finalData.vatAmountGBP > 0.0001;
 
-  // VATの円換算（finalData に JPY が入ってなければ計算する）
-  const vatAmountJPY =
-    finalData?.vatAmountJPY ??
-    (finalData
-      ? Math.round(finalData.vatAmountGBP * exchangeRateGBPtoJPY)
-      : undefined);
+  // GBP → USD のクロスレート（両方のレートが揃っているときだけ有効）
+  const gbpToUsd = 
+  exchangeRateUSDtoJPY && exchangeRateGBPtoJPY > 0
+  ? exchangeRateGBPtoJPY / exchangeRateUSDtoJPY
+  : null;
 
-  const vatToPayJPY =
-    finalData?.vatToPayJPY ??
-    (finalData?.vatToPayGBP !== undefined
-      ? Math.round(finalData.vatToPayGBP * exchangeRateGBPtoJPY)
-      : undefined);
+  // GBP金額を表示通貨 (GBP or USD) に変換
+  const gbpToPrimary = (gbpAmount: number) => {
+    if (currency === "GBP" || !gbpToUsd) return gbpAmount;
+    return gbpAmount * gbpToUsd;
+  };
 
-  // GBP→USD レート（両方あるときだけ計算）
-  const gbpToUsd =
-    exchangeRateGBPtoJPY > 0 && exchangeRateUSDtoJPY
-      ? exchangeRateUSDtoJPY / exchangeRateGBPtoJPY
-      : null;
+  // JPY金額を表示通貨に変換（「/ ¥xxxx」の左側に出す値）
+  const jpyToPrimary = (jpyAmount: number) => {
+    if (!exchangeRateGBPtoJPY || exchangeRateGBPtoJPY <= 0) return 0;
 
-  // 表示するVAT額（通貨モードに応じて £ / $ を出し分け）
-  const primaryVatSymbol = currency === "USD" ? "$" : "£";
-  const primaryVatValue =
-    currency === "USD" && gbpToUsd && finalData
-      ? finalData.vatAmountGBP * gbpToUsd // GBP → USD 換算
-      : finalData?.vatAmountGBP ?? 0;     // GBPモード or レート不足時
+    if (currency === "GBP") {
+      return jpyAmount / exchangeRateGBPtoJPY;
+    }
+
+    // 円 → ドル (USDレートがない時はとりあえず GBP にフォールバック)
+    if (!exchangeRateUSDtoJPY || exchangeRateUSDtoJPY <= 0) {
+      return jpyAmount / exchangeRateGBPtoJPY;
+    }
+    return jpyAmount / exchangeRateUSDtoJPY;
+  };
+
+  const vatAmountJPY = finalData?.vatAmountJPY ?? 0;
 
   return (
     <div className="p-4 border rounded bg-gray-50 space-y-2 text-gray-800">
@@ -88,24 +90,24 @@ export default function Result({
         <>
           <hr className="border-gray-300 my-2" />
 
-          {/* VAT額：UIの通貨（GBP/ USD） + 円 */}
+          {/* VAT額：モーダルと同じロジック（JPY → 表示通貨） */}
           <p>
-            <span className="font-semibold">■ VAT額:</span> {primaryVatSymbol}
-            {primaryVatValue.toFixed(2)} / ¥
-            {vatAmountJPY?.toLocaleString() ?? "-"}
+            <span className="font-semibold">■ VAT額:</span> {symbol}
+            {jpyToPrimary(vatAmountJPY).toFixed(2)} / ¥
+            {vatAmountJPY.toLocaleString()}
           </p>
 
           <p>
-            <span className="font-semibold">■ VAT込み価格:</span> £
-            {finalData.adjustedPriceGBP.toFixed(2)} / ¥
+            <span className="font-semibold">■ VAT込み価格:</span> {symbol}
+            {gbpToPrimary(finalData.adjustedPriceGBP).toFixed(2)} / ¥
             {Math.round(
               finalData.adjustedPriceGBP * exchangeRateGBPtoJPY
             ).toLocaleString()}
           </p>
 
           <p>
-            <span className="font-semibold">■ VAT抜き価格:</span> £
-            {finalData.sellingPriceGBP.toFixed(2)} / ¥
+            <span className="font-semibold">■ VAT抜き価格:</span> {symbol}
+            {gbpToPrimary(finalData.sellingPriceGBP).toFixed(2)} / ¥
             {Math.round(
               finalData.sellingPriceGBP * exchangeRateGBPtoJPY
             ).toLocaleString()}
@@ -113,9 +115,8 @@ export default function Result({
 
           {finalData.vatToPayGBP !== undefined && (
             <p>
-              <span className="font-semibold">■ 差額納付VAT:</span> £
-              {finalData.vatToPayGBP.toFixed(2)} / ¥
-              {vatToPayJPY?.toLocaleString() ?? "-"}
+              <span className="font-semibold">■ 差額納付VAT:</span> {symbol}
+              {gbpToPrimary(finalData.vatToPayGBP).toFixed(2)} / ¥
             </p>
           )}
         </>
