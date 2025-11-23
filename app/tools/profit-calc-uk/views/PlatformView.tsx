@@ -12,6 +12,7 @@ import FinalResultModal from "@/app/tools/profit-calc-uk/components/FinalResultM
 import { useExchangeRate } from "@/app/tools/profit-calc-uk/hooks/useExchange.Rate";
 import { useShipping } from "@/app/tools/profit-calc-uk/hooks/useShipping";
 import { useProfitCalc } from "@/app/tools/profit-calc-uk/hooks/useProfitCalc";
+import Tooltip from "@/app/tools/profit-calc-uk/components/Tooltip";
 
 // eBay プラットフォーム想定の VAT 率（UK 20%）
 const VAT_RATE = 0.2;
@@ -102,10 +103,6 @@ export default function Page() {
             ProfitCalc (UK) -eBay プラットフォーム最安値モード
           </span>
         </h1>
-        <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
-          売値は「VAT込み」で入力します。内部では自動的に VAT を控除し、 eBay
-          手数料・送料・為替・VATルールを加味した利益を計算します。
-        </p>
 
         {/* Blur中 loader */}
         {isLoadingAll && (
@@ -176,9 +173,13 @@ export default function Page() {
               </>
             ) : (
               <>
-                <label className="block text-sm font-semibold text-neutral-800 mb-1">
-                  売値 (VAT込み{currency === "GBP" ? "£" : "$"})
-                </label>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-sm font-semibold text-neutral-800">
+                    売値 (VAT込み{currency === "GBP" ? "£" : "$"})
+                  </label>
+
+                  <Tooltip text="売値はVAT込みで入力します。内部では自動的にVATを控除し、EBAY手数料・送料・為替・VATルールを加味した利益を計算します。" />
+                </div>
                 <input
                   type="number"
                   step="0.01"
@@ -193,13 +194,6 @@ export default function Page() {
                   placeholder="例: 200"
                   className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="mt-1 text-xs text-neutral-500">
-                  135ポンド以下の金額は「VAT込み」として自動で VAT(
-                  {VAT_RATE * 100}%)
-                  を控除して計算します。<br />135ポンドを超える金額は、プラットフォーム側で
-                  VATが徴収されない想定で「VAT抜き価格」として扱います。<br />
-                  （中身は通常版と同じ eBay コアロジックです）
-                </p>
               </>
             )}
           </div>
