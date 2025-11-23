@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛠️ Muu Tools Hub
 
-## Getting Started
+Next.js（App Router）+ TypeScript で構築した  
+**海外利益計算・送料計算・為替コンポーネントなどの業務支援ツールを統合したハブアプリケーション** です。
 
-First, run the development server:
+UK / US の利益計算ツール、送料シミュレーター、共通 UI、設定画面などを一元管理でき、  
+将来的に WordPress / Laravel API と連携可能な構成を想定しています。
+
+---
+
+# 🚀 技術スタック
+
+- **Next.js 14 (App Router)**
+- **TypeScript**
+- **Tailwind CSS**
+- **Framer Motion**
+- Radix UI（一部）
+- Docker（開発用）
+- デプロイ: **Vercel**
+
+---
+
+# 📁 プロジェクト構成（実際の構成に基づく）
+
+app/
+globals.css
+layout.tsx
+Loading.tsx
+page.tsx
+
+tools/
+profit-calc-uk/
+components/
+ChatIcon.tsx
+ExchangeRate.tsx
+FinalResultModal.tsx
+ModeSwitcherFab.tsx
+Result.tsx
+hooks/
+useExchangeRate.ts
+useShipping.ts
+useTimeout.ts
+views/
+NomalView.tsx
+PlatformView.tsx
+page.tsx
+ProfitCalcUK.tsx
+
+components/
+ExchangeRateBar.tsx
+SiteFooter.tsx
+SiteHeader.tsx
+Spinner.tsx
+ToolCardSkeleton.tsx
+
+lib/
+price.ts
+profitCalc.ts
+shipping.ts
+vatRule.ts
+
+types/
+profit.ts
+
+public/
+images / favicon 等
+
+Dockerfile
+docker-compose.yml
+next.config.ts
+package.json
+postcss.config.mjs
+README.md
+
+## 🇬🇧 UK 利益計算ツール
+
+- VAT 20%
+- **135ポンドルール完全対応**
+- USD → GBP → VAT → JPY の正確な変換
+- 利益 / 最終利益 / 利益率の自動計算
+- 二段変換なしの TypeScript ロジック
+- 入力値の型チェック（number / "" を正確にハンドリング）
+
+**関連ファイル：**
+- `app/tools/profit-calc-uk/ProfitCalcUK.tsx`
+- `lib/vatRule.ts`
+- `lib/profitCalc.ts`
+
+## 📦 セットアップ
+
+### 1. クローン
+
+```bash
+git clone https://github.com/muu-ima/muu-tools-hub.git
+cd muu-tools-hub
+```
+
+### 2. インストール
+
+```bash
+npm install
+```
+
+### 3. 開発サーバー起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+👉 http://localhost:3000 にアクセス
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 👤 Author
 
-## Learn More
+**muu ima**
 
-To learn more about Next.js, take a look at the following resources:
+Next.js / TypeScript / Laravel / WordPress / Docker を使って  
+業務支援アプリや予約管理システム、海外利益計算ツールなどを制作している  
+**業務ツールクリエイター**。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 独学 1年でフルスタック構成を習得  
+- 設計・ロジック・UI/UX・デプロイまで一貫して制作  
+- 社内ツールを中心に、実用性のあるアプリを継続的に開発  
+- Tools Hub を軸に、計算ツールやシステムを随時拡張中  
