@@ -29,6 +29,9 @@ export default function ReverseView() {
   const [targetProfitRate, setTargetProfitRate] = useState<number | "">("");
   const [reverseError, setReverseError] = useState<string | null>(null);
 
+  // とりあえず関税率は 0% として扱う（US 版でちゃんとUIを作るならそこで管理）
+  const customsRatePercent = 0;
+
   // ====== 配送 ======
   const {
     weight,
@@ -70,70 +73,90 @@ export default function ReverseView() {
   // ====== Modal ======
   const [isOpen, setIsOpen] = useState(false);
 
+  // 入力の有無を分解してチェック
+  const hasCost = typeof costPrice === "number";
+  const hasTarget = typeof targetProfitRate === "number";
+  const hasShipping = selectedShippingJPY != null;
+  const hasCategory = typeof selectedCategoryFee === "number";
+  const hasGBP = gbpRate != null;
+  const hasUSD = usdRate != null;
+
+  // 通貨ごとに必要なレート条件を分ける
+  const hasRequiredRates = currency === "GBP" ? hasGBP : hasGBP && hasUSD;
+
+  const canReverse =
+    !isLoadingAll &&
+    gbpRate != null &&
+    hasRequiredRates &&
+    hasCost &&
+    hasTarget &&
+    hasShipping &&
+    hasCategory;
+
   // ====== 逆算ハンドラ ======
-  const handleReverseCalc = () => {
-    if (currency !== "GBP") {
-      setReverseError("いまの逆算機能は GBP モード専用です。");
-      return;
+  async function handleReverseCalc() {
+    setReverseError("");
+
+    // 共通：何らかのレートが 0/undefined なら弾く
+    if (!rate) {
+      return setReverseError("為替レートが取得できていません。");
     }
 
-    if (costPrice === "") {
-      setReverseError("仕入れ値を入力してください。");
-      return;
+    if (gbpRate == null) {
+      return setReverseError("GBPレートが取得できていません。");
     }
 
-    if (selectedShippingJPY == null) {
-      setReverseError(
-        "配送料がまだ計算されていません。重量・サイズまたは手動配送料を入力してください。"
-      );
-      return;
+    if (targetProfitRate === "" || Number(targetProfitRate) <= 0) {
+      return setReverseError("目標利益率(%) を入力してください。");
     }
 
-    if (selectedCategoryFee == null || selectedCategoryFee === "") {
-      setReverseError("カテゴリ手数料を選択してください。");
-      return;
+    if (costPrice === "" || !selectedShippingJPY) {
+      return setReverseError("仕入れ値・配送料を入力してください。");
     }
 
-    if (targetProfitRate === "") {
-      setReverseError("目標利益率(%) を入力してください。");
-      return;
+    if (!selectedCategoryFee) {
+      return setReverseError("カテゴリ手数料を選択してください。");
     }
 
-    if (!gbpRate) {
-      setReverseError("GBP 為替レートの取得を待っています。");
-      return;
-    }
+    const margin = Number(targetProfitRate);
 
-    const costJPY = Number(costPrice);
-    const shippingJPY = selectedShippingJPY;
-    const targetRateDecimal = Number(targetProfitRate) / 100;
-
+    const gbpRateSafe: number = gbpRate;
     try {
-      const { priceGBPExVAT } = calculateSellingPriceFromProfitRateUK({
-        targetProfitRate: targetRateDecimal,
-        includeVAT: true, // eBayプラットフォーム前提で VAT を噛ませる
-
-        costPriceJPY: costJPY,
-        shippingJPY,
+      // 1) まず GBP で逆算（UK の一本化エンジン）
+      const resultGBP = calculateSellingPriceFromProfitRateUK({
+        targetProfitRate: margin,
+        costPriceJPY: Number(costPrice),
+        shippingJPY: selectedShippingJPY || 0,
         categoryFeePercent: Number(selectedCategoryFee),
-
-        // ★ 必要に応じてここは実際の値に合わせて
-        customsRatePercent: 0, // 例: 0%
-        payoneerFeePercent: 2, // 例: 2%
-
-        exchangeRateGBPtoJPY: gbpRate,
+        customsRatePercent: 0,
+        payoneerFeePercent: 2,
+        exchangeRateGBPtoJPY: gbpRateSafe,
       });
 
-      const rounded = Math.floor(priceGBPExVAT * 100) / 100;
-      setSellingPrice(rounded);
-      setReverseError(null);
-    } catch (e) {
-      console.error(e);
-      setReverseError(
-        "逆算中にエラーが発生しました。パラメータを確認してください。"
-      );
+      // 2) UK 逆算結果 (GBP) をそのままUSDにクロス変換
+      if (currency === "USD") {
+        const gbpTousd = usdRate! / gbpRate!;
+        const usdPrice = resultGBP.priceGBPExVAT * gbpTousd;
+        setSellingPrice(Number(usdPrice.toFixed(2)));
+        return;
+      }
+
+      // GBPモード
+      const result = calculateSellingPriceFromProfitRateUK({
+        targetProfitRate: margin / 100, // ← 0.2 のような少数で渡すならここで /100
+        costPriceJPY: Number(costPrice),
+        shippingJPY: selectedShippingJPY || 0,
+        categoryFeePercent: Number(selectedCategoryFee),
+        customsRatePercent,
+        payoneerFeePercent: 2,
+        exchangeRateGBPtoJPY: gbpRate!,
+      });
+
+      setSellingPrice(result.priceGBPExVAT);
+    } catch (err) {
+      setReverseError("計算に失敗しました。" + (err as Error).message);
     }
-  };
+  }
 
   return (
     <div
@@ -150,8 +173,8 @@ export default function ReverseView() {
           </span>
         </h1>
         <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
-          目標利益率(%)・仕入れ値・配送料・カテゴリ手数料から、
-          必要な売値 (GBP) を二分探索で逆算します。
+          目標利益率(%)・仕入れ値・配送料・カテゴリ手数料から、 必要な売値 (GBP)
+          を二分探索で逆算します。
         </p>
 
         {isLoadingAll && (
@@ -241,7 +264,12 @@ export default function ReverseView() {
                   <button
                     type="button"
                     onClick={handleReverseCalc}
-                    className="ml-auto inline-flex items-center px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                    className={`ml-auto inline-flex items-center px-3 py-2 rounded-full text-xs font-semibold
+                    ${
+                      canReverse
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-neutral-300 text-neutral-400 cursor-not-allowed"
+                    }`}
                   >
                     売値を計算
                   </button>

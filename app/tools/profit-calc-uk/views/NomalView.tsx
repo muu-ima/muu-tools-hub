@@ -14,6 +14,7 @@ import { useShipping } from "@/app/tools/profit-calc-uk/hooks/useShipping";
 import { useProfitCalc } from "@/app/tools/profit-calc-uk/hooks/useProfitCalc";
 
 export default function Page() {
+
   const timeoutReached = useTimeout(5000);
 
   // ====== 為替 ======
@@ -62,6 +63,7 @@ export default function Page() {
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
 
+  const shippingModeReady = !isLoadingAll;
   // ====== Modal ======
   const [isOpen, setIsOpen] = useState(false);
 
@@ -222,21 +224,25 @@ export default function Page() {
           </div>
 
           {/* 配送料フォーム */}
-          <div className="mt-1 rounded-lg min-h-[150px]">
+          <motion.div
+            layout
+            className="mt-1 rounded-lg"
+            transition={{ type: "spring", stiffness: 220, damping: 26 }}
+          >
             {isLoadingAll ? (
               <div className="h-36 w-full rounded-lg bg-neutral-200 animate-pulse" />
             ) : (
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={shippingMode}
-                  initial={{ opacity: 0, y: -12, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: 12, height: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  style={{ overflow: "hidden" }}
-                >
+              shippingModeReady && (
+                <AnimatePresence mode="wait" initial={false}>
                   {shippingMode === "auto" ? (
-                    <fieldset className="space-y-3">
+                    <motion.fieldset
+                      key="auto"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="space-y-3"
+                    >
                       <div>
                         <label className="block text-sm font-semibold text-neutral-800 mb-1">
                           実重量 (g)
@@ -298,9 +304,15 @@ export default function Page() {
                           />
                         </div>
                       </div>
-                    </fieldset>
+                    </motion.fieldset>
                   ) : (
-                    <div>
+                    <motion.div
+                      key="manual"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                    >
                       <label className="block text-sm font-semibold text-neutral-800 mb-1">
                         配送料（円・手動）
                       </label>
@@ -318,12 +330,12 @@ export default function Page() {
                       <p className="text-xs text-neutral-500 mt-1">
                         ※ 手動入力時は重量/サイズは非表示になります
                       </p>
-                    </div>
+                    </motion.div>
                   )}
-                </motion.div>
-              </AnimatePresence>
+                </AnimatePresence>
+              )
             )}
-          </div>
+          </motion.div>
 
           {/* カテゴリ手数料 */}
           <div>

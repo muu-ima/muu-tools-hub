@@ -286,10 +286,12 @@ export function calculateSellingPriceFromProfitRateUK({
   if (targetProfitRate < 0) {
     throw new Error("tafgetProfitRate は 0 以上で指定してください");
   }
-  // 探索のざっくりスタート地点(原価 + 送料 あたり)
+
+  const target = targetProfitRate / 100;
+
   const totalCostJPY = costPriceJPY + shippingJPY;
   if (totalCostJPY <= 0) {
-    throw new Error("コスト (仕入れ + 送料) が 0 以下のため利益率が定義できません");
+    throw new Error("コスト (仕入 + 送料)が0以下のため利益率が定義できません")
   }
 
   const basePriceGBP = totalCostJPY / exchangeRateGBPtoJPY || 1;
@@ -313,19 +315,19 @@ export function calculateSellingPriceFromProfitRateUK({
       includeVAT,
       exchangeRateGBPtoJPY,
     });
-    // profitMargin は % (例: 30) なので少数に直して返す
-    return detail.profitMargin / 100;
+// profitMargin は %（例: 30）→ 0.3 に直す
+     return detail.profitMargin / 100;
   };
   for (let i = 0; i < 100; i++) {
     const mid = (low + high) / 2;
     const currentRate = getProfitRate(mid);
 
-    if (Math.abs(currentRate - targetProfitRate) < tolerance) {
+    if (Math.abs(currentRate - target) < tolerance) {
       low = mid;
       break;
     }
     
-    if (currentRate < targetProfitRate) {
+    if (currentRate < target) {
       // 利益率が足りない → もっと値上げ
       low = mid ;
     } else {
@@ -355,4 +357,93 @@ export function calculateSellingPriceFromProfitRateUK({
     priceGBPIncVAT,
     priceJPY,
   };
+}
+
+/**
+ * 目標利益率から売値 (USD →　GBP, VAT抜き) を二分探索で逆算する
+ * - calculateFinalProfitDetail に完全追従
+ * - profitMargin は 「売上(円)に対する利益率」として扱う
+ */
+
+export function calculateSellingPriceUSDFromProfitRateWithVAT({
+  costPriceJPY,
+  shippingJPY,
+  targetProfitRate,
+  categoryFeePercent,
+  customsRatePercent,
+  payoneerFeePercent,
+  includeVAT = true,
+  exchangeRateUSDtoJPY,
+  exchangeRateGBPtoJPY,
+}: {
+  costPriceJPY: number;
+  shippingJPY: number;
+  targetProfitRate: number;
+  categoryFeePercent: number;
+  customsRatePercent: number;
+  payoneerFeePercent: number;
+  includeVAT?: boolean;
+  exchangeRateUSDtoJPY: number;
+  exchangeRateGBPtoJPY: number;
+}) {
+  if (!exchangeRateUSDtoJPY || !exchangeRateGBPtoJPY) {
+    throw new Error("exchangRateUSDtoJPY と exchangeRateGBPtoJPY が必要です");
+  }
+
+  const target = targetProfitRate / 100;
+
+  // コストからだいたいの下限・上限をきめる
+  const costUSD = costPriceJPY / exchangeRateUSDtoJPY;
+  const shippingUSD = shippingJPY / exchangeRateUSDtoJPY;
+  const baseUSD = costUSD + shippingUSD || 1;
+
+  let low = Math.max(1, baseUSD * 0.5);
+  let high = Math.max(10, baseUSD * 5);
+  const tolerance = 0.0001;
+
+  let bestDetail: ReturnType<typeof calculateFinalProfitDetailFromUSD> | null =
+  null;
+
+  for (let i = 0; i < 80; i++) {
+    const mid = (low + high) / 2;
+
+    const detail = calculateFinalProfitDetailFromUSD({
+      sellingPriceUSD: mid,
+      costPriceJPY,
+      shippingJPY,
+      categoryFeePercent,
+      customsRatePercent,
+      payoneerFeePercent,
+      includeVAT,
+      exchangeRateUSDtoJPY,
+      exchangeRateGBPtoJPY,
+    });
+
+    // UK側 calculateFinalProfitDetail が profitMargin を持っている想定
+    const currentRate = detail.profitMargin / 100; 
+
+    bestDetail = detail;
+
+    if (Math.abs(currentRate - target) < tolerance) {
+      low = mid;
+      break;
+    }
+
+    if (currentRate < target) {
+      // 利益率が足りない →　売値をあげる
+      low = mid;
+    } else {
+      // 利益率が高すぎ →　もう少し安くてOK
+      high = mid;
+    }
+  }
+
+    const priceUSD = low;
+    const priceJPY = Math.ceil(priceUSD * exchangeRateUSDtoJPY * 100) / 100;
+
+    return {
+      priceUSD,
+      priceJPY,
+      detail: bestDetail, // 順行ロジックの結果一式（最終利益, VAT額など）
+    };
 }
