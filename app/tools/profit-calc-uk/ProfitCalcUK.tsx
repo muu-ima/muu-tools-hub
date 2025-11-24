@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import NormalView from "@/app/tools/profit-calc-uk/views/NomalView";
-import PlatformView from "@/app/tools/profit-calc-uk/views/PlatformView"
+import PlatformView from "@/app/tools/profit-calc-uk/views/PlatformView";
+import ReverseView from "@/app/tools/profit-calc-uk/views/ReverseView"
 import ModeSwitcherFab from "@/app/tools/profit-calc-uk/components/ModeSweitcherFab";
 
 type ToolMode = "normal" | "reverse" | "platform";
@@ -17,8 +18,8 @@ export default function ProfitCalcUK({ initialMode }: { initialMode: ToolMode })
       {mode === "normal" && <NormalView />}
 
       {mode === "reverse" && (
-        <div className="text-neutral-600 p-4 border rounded-lg">
-          ReverseView はまだ未実装です
+        <div className="text-neutral-600 p-4">
+          <ReverseView />
         </div>
       )}
 

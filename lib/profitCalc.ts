@@ -247,3 +247,112 @@ export function calculateFinalProfitDetailFromUSD({
     sellingPriceUSDJPY,
   };
 }
+
+
+/**
+ * 目標利益率から売値 (GBP, VAT抜き) を二分探索で逆算する
+ * - calculateFinalProfitDetail に完全追従
+ * - profitMargin は 「売上(円)に対する利益率」として扱う
+ */
+
+export function calculateSellingPriceFromProfitRateUK({
+  targetProfitRate,     // 0.3 = 30%
+  includeVAT = true,
+  costPriceJPY,
+  shippingJPY,
+  categoryFeePercent,
+  customsRatePercent,
+  payoneerFeePercent,
+  exchangeRateGBPtoJPY,
+}: {
+  targetProfitRate: number;  // 少数 (0.3 な 30％)
+  includeVAT?: boolean;
+  
+  
+  costPriceJPY: number;
+  shippingJPY: number;
+  categoryFeePercent: number;
+  customsRatePercent: number;
+  payoneerFeePercent: number;
+  exchangeRateGBPtoJPY: number;
+}): {
+  priceGBPExVAT: number; // VAT 抜き売値(内部用)
+  priceGBPIncVAT: number; // VAT 抜き売値(内部用)
+  priceJPY: number;      // VAT込み売値の円換算
+} {
+  if (!exchangeRateGBPtoJPY) {
+    throw new Error("exchageRateGBPtoJPY が必要です");
+  }
+  if (targetProfitRate < 0) {
+    throw new Error("tafgetProfitRate は 0 以上で指定してください");
+  }
+  // 探索のざっくりスタート地点(原価 + 送料 あたり)
+  const totalCostJPY = costPriceJPY + shippingJPY;
+  if (totalCostJPY <= 0) {
+    throw new Error("コスト (仕入れ + 送料) が 0 以下のため利益率が定義できません");
+  }
+
+  const basePriceGBP = totalCostJPY / exchangeRateGBPtoJPY || 1;
+
+  let low = basePriceGBP * 0.5;
+  if (low < 1) low = 1;
+  let high = basePriceGBP * 5;
+  if (high < 10) high = 10;
+
+  const tolerance = 0.0001;
+
+  // 「売上に対する利益率 (少数)」を計算
+  const getProfitRate = (sellingPriceGBPExVAT: number): number => {
+    const detail = calculateFinalProfitDetail({
+      sellingPriceGBP: sellingPriceGBPExVAT,
+      costPriceJPY,
+      shippingJPY,
+      categoryFeePercent,
+      customsRatePercent,
+      payoneerFeePercent,
+      includeVAT,
+      exchangeRateGBPtoJPY,
+    });
+    // profitMargin は % (例: 30) なので少数に直して返す
+    return detail.profitMargin / 100;
+  };
+  for (let i = 0; i < 100; i++) {
+    const mid = (low + high) / 2;
+    const currentRate = getProfitRate(mid);
+
+    if (Math.abs(currentRate - targetProfitRate) < tolerance) {
+      low = mid;
+      break;
+    }
+    
+    if (currentRate < targetProfitRate) {
+      // 利益率が足りない → もっと値上げ
+      low = mid ;
+    } else {
+      // 利益率が高すぎる →　もう少し値下げできる
+      high = mid;
+    }
+  }
+
+  const priceGBPExVAT = low;
+
+  // ===== VAT ルール（NomalView と揃える） =====
+  const VAT_RATE = 0.2;
+  const VAT_THRESHOLD_GBP = 135;
+
+  let priceGBPIncVAT: number;
+  if (priceGBPExVAT <= VAT_THRESHOLD_GBP) {
+    priceGBPIncVAT = priceGBPExVAT * (1 + VAT_RATE);
+  } else {
+    priceGBPIncVAT = priceGBPExVAT;
+  }
+
+  const priceJPY = 
+  Math.ceil(priceGBPIncVAT * exchangeRateGBPtoJPY * 100) / 100;
+
+  return {
+    priceGBPExVAT,
+    priceGBPIncVAT,
+    priceJPY,
+  };
+}
