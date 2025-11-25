@@ -62,8 +62,8 @@ export default function Page() {
   // ====== ローディング判定 ======
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
-
   const shippingModeReady = !isLoadingAll;
+  
   // ====== Modal ======
   const [isOpen, setIsOpen] = useState(false);
 
