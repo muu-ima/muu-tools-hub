@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ChatIcon from "./ChatIcon";
 
 type ToolMode = "normal" | "reverse" | "platform";
@@ -13,6 +14,29 @@ export default function ModeSwitcherFab({
   onSelect: (mode: ToolMode) => void;
 }) {
   const [open, setOpen] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleSelect = (mode: ToolMode) => {
+    onSelect(mode);
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (mode === "normal") {
+      params.delete("mode");
+    } else {
+      params.set("mode", mode);
+    }
+
+    const query = params.toString();
+    const url = query ? `${pathname}?${query}` : pathname;
+
+    router.push(url, { scroll: false });
+
+    setOpen(false);
+  };
 
   return (
     <>
@@ -63,30 +87,21 @@ export default function ModeSwitcherFab({
 
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => {
-                  onSelect("normal");
-                  setOpen(false);
-                }}
+                onClick={() => handleSelect("normal")}
                 className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🔵 順行計算（Normal）
               </button>
 
               <button
-                onClick={() => {
-                  onSelect("reverse");
-                  setOpen(false);
-                }}
+                onClick={() => handleSelect("reverse")}
                 className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🔁 逆算ロジック（Reverse）
               </button>
 
               <button
-                onClick={() => {
-                  onSelect("platform");
-                  setOpen(false);
-                }}
+                onClick={() => handleSelect("platform")}
                 className="px-3 py-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-sm transition"
               >
                 🟣 最安値モード（Platform）
