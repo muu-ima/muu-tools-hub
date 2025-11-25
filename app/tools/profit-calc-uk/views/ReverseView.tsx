@@ -131,19 +131,29 @@ export default function ReverseView() {
         customsRatePercent: 0,
         payoneerFeePercent: 2,
         exchangeRateGBPtoJPY: gbpRateSafe,
+        profitMode: "pure",
+        debug: true,
       });
 
-      // 2) UK 逆算結果 (GBP) をそのままUSDにクロス変換
+      // 2) UK 逆算結果 (GBP) を USD にクロス変換
       if (currency === "USD") {
-        const gbpTousd = usdRate! / gbpRate!;
-        const usdPrice = resultGBP.priceGBPExVAT * gbpTousd;
-        setSellingPrice(Number(usdPrice.toFixed(2)));
+        if (!usdRate) {
+          setReverseError("USDレートが取得できていません。");
+          return;
+        }
+
+        // 1 GBP が何 USD か = (GBP→JPY) / (USD→JPY)
+        const gbpToUsd = gbpRateSafe / usdRate;
+
+        const usdPriceExVAT = resultGBP.priceGBPExVAT * gbpToUsd;
+
+        setSellingPrice(Number(usdPriceExVAT.toFixed(2)));
         return;
       }
 
       // GBPモード
       const result = calculateSellingPriceFromProfitRateUK({
-        targetProfitRate: margin / 100, // ← 0.2 のような少数で渡すならここで /100
+        targetProfitRate: margin,
         costPriceJPY: Number(costPrice),
         shippingJPY: selectedShippingJPY || 0,
         categoryFeePercent: Number(selectedCategoryFee),
