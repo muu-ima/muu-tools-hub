@@ -1,6 +1,14 @@
 import ProfitCalcUK from "@/app/tools/profit-calc-uk/ProfitCalcUK";
+import { Suspense } from "react";
 
-export default function Page({ searchParams }: { searchParams: { mode?: string } }) {
+// （オマケだけど安全策として入れておくと良い）
+export const dynamic = "force-dynamic";
+
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { mode?: string };
+}) {
   const initialMode =
     searchParams.mode === "reverse"
       ? "reverse"
@@ -8,5 +16,15 @@ export default function Page({ searchParams }: { searchParams: { mode?: string }
       ? "platform"
       : "normal";
 
-  return <ProfitCalcUK initialMode={initialMode} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="p-4 text-sm text-neutral-500">
+          モードを準備しています…
+        </div>
+      }
+    >
+      <ProfitCalcUK initialMode={initialMode} />
+    </Suspense>
+  );
 }
