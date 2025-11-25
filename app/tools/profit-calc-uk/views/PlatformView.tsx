@@ -104,6 +104,11 @@ export default function Page() {
             ProfitCalc (UK) -eBay プラットフォーム最安値モード
           </span>
         </h1>
+        <p className="text-sm text-neutral-700 leading-relaxed mt-2 mb-4">
+          売値（VAT込み）を入力すると、VAT控除・135GBPルール・カテゴリ手数料・為替・送料（自動判定）を含めた
+          eBay UK
+          向け最終利益を算出します。重量とサイズから送料も自動で選ばれます。
+        </p>
 
         {/* Blur中 loader */}
         {isLoadingAll && (

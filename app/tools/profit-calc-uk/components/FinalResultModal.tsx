@@ -9,6 +9,7 @@ type FinalResultModalProps = FinalResultBaseProps & {
   onClose: () => void;
   currency: "GBP" | "USD";
   exchangeRateUSDtoJPY?: number;
+  hideProfitRate?: boolean;
 };
 
 export default function FinalResult({
@@ -20,6 +21,7 @@ export default function FinalResult({
   exchangeRateGBPtoJPY,
   currency,
   exchangeRateUSDtoJPY,
+  hideProfitRate,
 }: FinalResultModalProps) {
   if (!isOpen) return null;
 
@@ -139,22 +141,20 @@ export default function FinalResult({
           {/* VAT関連 */}
           <div className="space-y-2">
             <p>
-              <span className="font-semibold">■ VAT額:</span> 
+              <span className="font-semibold">■ VAT額:</span>
               {symbol}
               {jpyToPrimary(data.vatAmountJPY).toFixed(2)} / ¥
               {data.vatAmountJPY.toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold">■ VAT込み価格:</span>{" "} 
-              {symbol}
+              <span className="font-semibold">■ VAT込み価格:</span> {symbol}
               {gbpToPrimary(data.adjustedPriceGBP).toFixed(2)} / ¥
               {Math.round(
                 data.adjustedPriceGBP * exchangeRateGBPtoJPY
               ).toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold">■ VAT抜き価格:</span>{" "}
-              {symbol}
+              <span className="font-semibold">■ VAT抜き価格:</span> {symbol}
               {gbpToPrimary(data.sellingPriceGBP).toFixed(2)} / ¥
               {Math.round(
                 data.sellingPriceGBP * exchangeRateGBPtoJPY
@@ -162,8 +162,7 @@ export default function FinalResult({
             </p>
             {data.vatToPayGBP !== undefined && (
               <p>
-                <span className="font-semibold">■ 差額納付VAT:</span>{" "}
-                {symbol}
+                <span className="font-semibold">■ 差額納付VAT:</span> {symbol}
                 {gbpToPrimary(data.vatToPayGBP).toFixed(2)}
               </p>
             )}
@@ -174,13 +173,13 @@ export default function FinalResult({
           {/* 利益 */}
           <div className="space-y-2">
             <p>
-              <span className="font-semibold">
-                ■ 利益（売上 - 総コスト）:
-              </span>
-              ¥{Math.ceil(data.netProfitJPY).toLocaleString()}
+              <span className="font-semibold">■ 利益（売上 - 総コスト）:</span>¥
+              {Math.ceil(data.netProfitJPY).toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold text-green-700">■ 最終利益(還付金付与):</span>
+              <span className="font-semibold text-green-700">
+                ■ 最終利益(還付金付与):
+              </span>
               <span className="text-green-600 font-bold">
                 ¥{Math.ceil(data.finalProfitJPY).toLocaleString()}
               </span>
@@ -188,24 +187,26 @@ export default function FinalResult({
           </div>
 
           {/* 利益率 */}
-          <div className="flex justify-between items-center border-t pt-4">
-            <span className="text-gray-700 font-medium">利益率</span>
-            <span className="text-3xl font-bold text-green-600">
-              {data.profitMargin.toFixed(2)}%
-            </span>
-          </div>
+          {!hideProfitRate && (
+            <div className="flex justify-between items-center border-t pt-4">
+              <span className="text-gray-700 font-medium">利益率</span>
+              <span className="text-3xl font-bold text-green-600">
+                {data.profitMargin.toFixed(2)}%
+              </span>
+            </div>
+          )}
 
           {/* 還付金メモ */}
           <div className="text-gray-500 text-sm space-y-1 pt-2 border-t">
             <p>
               ※ 税還付金 : {symbol}
-              {jpyToPrimary(data.exchangeAdjustmentJPY).toFixed(2)} {" "}
-              / ¥{data.exchangeAdjustmentJPY.toLocaleString()}
+              {jpyToPrimary(data.exchangeAdjustmentJPY).toFixed(2)} / ¥
+              {data.exchangeAdjustmentJPY.toLocaleString()}
             </p>
             <p>
               ※ 手数料還付金 : {symbol}
-              {jpyToPrimary(data.feeRebateJPY).toFixed(2)}{" "}
-               / ¥{data.feeRebateJPY.toLocaleString()}
+              {jpyToPrimary(data.feeRebateJPY).toFixed(2)} / ¥
+              {data.feeRebateJPY.toLocaleString()}
             </p>
           </div>
         </div>

@@ -88,7 +88,6 @@ export function calculateFinalProfitDetail({
 
   // 税還付金(JPY)　手数料還付金(JPY)
   const exchangeAdjustmentJPY = (costPriceJPY * 10) / 110;
-
   const feeRebateJPY = ((categoryFeeGBP * 10) / 100) * exchangeRateGBPtoJPY;
 
   // 12. 最終損益 (JPY)
@@ -96,6 +95,8 @@ export function calculateFinalProfitDetail({
 
   // 13. 利益率
   const sellingPriceJPY = sellingPriceGBP * exchangeRateGBPtoJPY;
+
+  // 還付金込みの最終利益率
   const profitMargin =
     sellingPriceJPY === 0 ? 0 : (finalProfitJPY / sellingPriceJPY) * 100;
 

@@ -604,6 +604,7 @@ export default function ReverseView() {
           exchangeRateGBPtoJPY={gbpRate!}
           currency={currency}
           exchangeRateUSDtoJPY={usdRate ?? 0}
+          hideProfitRate={true}
         />
       )}
     </div>
