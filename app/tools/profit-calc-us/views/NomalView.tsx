@@ -12,7 +12,7 @@ import {
   calculateGrossProfit,
   calculateProfitMargin,
 } from "@/lib/profitCalcUS";
-import FinalResult from "@/app/tools/profit-calc-us/components/FinalResultModal";
+import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
 // 型定義
 type ShippingResult = {
   method: string;
@@ -363,7 +363,7 @@ export default function NomalView() {
 
           {/* モーダル */}
           {final && (
-            <FinalResult
+            <FinalResultModal
               isOpen={isOpen}
               onClose={() => setIsOpen(false)}
               shippingMethod={result?.method || ""}

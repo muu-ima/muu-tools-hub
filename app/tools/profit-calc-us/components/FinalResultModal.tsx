@@ -12,7 +12,7 @@ type FinalResultProps = {
   hideProfitRate?: boolean;
 };
 
-export default function FinalResult({
+export default function FinalResultModal({
   isOpen,
   onClose,
   shippingMethod,

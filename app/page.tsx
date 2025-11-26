@@ -29,7 +29,7 @@ const tools: ToolLink[] = [
     id: "profit-us",
     name: "海外利益計算（US版）",
     description: "USD → JPY / US向け送料・手数料対応版。",
-    href: "https://enyukari.capoo.jp/profit-calc-us",
+    href: "/tools/profit-calc-us",
   },
   {
     id: "shipping-sim",
