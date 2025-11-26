@@ -1,50 +1,58 @@
-'use client';
+"use client";
 import { useEffect, useState } from "react";
 
 type ExchangeRateResponse = {
-    rates?: {
-        USD?: number;
-        GBP?: number;
-    };
+  rates?: {
+    USD?: number;
+    GBP?: number;
+  };
 };
 
 export default function ExchangeRate({
-    onRateChange,
+  onRateChange,
 }: {
-    onRateChange?: (rate: number | null) => void;
+  onRateChange?: (rate: number | null) => void;
 }) {
-    const [usdRate, setUsdRate] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
+  const [usdRate, setUsdRate] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        let cancelled = false;
-        fetch('/api/exchange-rate')
-            .then((res) => res.json())
-            .then((data: ExchangeRateResponse) => {
-                if(cancelled) return;
-                const rate = data.rates?.USD ?? null;
-            
-                setUsdRate(rate);
-                setLoading(false);
-                
-                if (onRateChange) onRateChange(rate);
-            })
-            .catch((err) => {
-                console.error('為替取得エラー', err);
-                if(cancelled) return;
-                 setUsdRate(null);
-                 setLoading(false);
-                if (onRateChange) onRateChange(null);
-            });
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/exchange-rate")
+      .then((res) => res.json())
+      .then((data: ExchangeRateResponse) => {
+        if (cancelled) return;
+        const rate = data.rates?.USD ?? null;
 
-            return () => {
-                cancelled = true;
-            };
-    }, [onRateChange]);
+        setUsdRate(rate);
+        setLoading(false);
 
-    return (
+        if (onRateChange) onRateChange(rate);
+      })
+      .catch((err) => {
+        console.error("為替取得エラー", err);
+        if (cancelled) return;
+        setUsdRate(null);
+        setLoading(false);
+        if (onRateChange) onRateChange(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onRateChange]);
+
+  return (
     <section className="mb-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 shadow-sm">
+      <div
+        className="
+                bg-white/60
+                border border-white/40
+                backdrop-blur-4px
+                rounded-2xl
+                p-5 shadow-sm
+            "
+      >
         <div className="flex items-center justify-between gap-4 mb-2">
           <div>
             <h2 className="text-base font-semibold tracking-wide text-blue-800">
@@ -79,5 +87,5 @@ export default function ExchangeRate({
         </div>
       </div>
     </section>
-    );
+  );
 }

@@ -207,8 +207,8 @@ export default function NomalView() {
                 if (num < 0) num = 0;
                 setCostPrice(num);
               }}
-              placeholder="仕入れ値"
-              className="w-full px-3 py-2 border rounded-md"
+              placeholder="5000"
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             />
           </div>
 
@@ -235,8 +235,8 @@ export default function NomalView() {
                   setSellingPrice(num.toFixed(2));
                 }
               }}
-              placeholder="売値"
-              className="w-full px-3 py-2 border rounded-md"
+              placeholder="150"
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             />
             <div className="mt-1 h-5 text-xs text-gray-500">
               {rate !== null && sellingPrice !== "" && (
@@ -257,8 +257,8 @@ export default function NomalView() {
               onChange={(e) =>
                 setWeight(e.target.value === "" ? null : Number(e.target.value))
               }
-              placeholder="実重量"
-              className="w-full px-3 py-2 border rounded-md"
+              placeholder="3000"
+              className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md"
             />
           </div>
 
@@ -275,7 +275,7 @@ export default function NomalView() {
                   setDimensions((prev) => ({ ...prev, length: num }));
                 }}
                 placeholder="長さ"
-                className="px-2 py-1 border rounded-md"
+                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
               />
               <input
                 type="number"
@@ -286,7 +286,7 @@ export default function NomalView() {
                   setDimensions((prev) => ({ ...prev, width: num }));
                 }}
                 placeholder="幅"
-                className="px-2 py-1 border rounded-md"
+                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
               />
               <input
                 type="number"
@@ -297,7 +297,7 @@ export default function NomalView() {
                   setDimensions((prev) => ({ ...prev, height: num }));
                 }}
                 placeholder="高さ"
-                className="px-2 py-1 border rounded-md"
+                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
               />
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function NomalView() {
             <select
               value={selectedCategoryFee}
               onChange={(e) => setSelectedCategoryFee(Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md"
             >
               <option value="">カテゴリを選択してください</option>
               {categoryOptions.map((cat) => (
@@ -323,7 +323,7 @@ export default function NomalView() {
         {/* 右カラム */}
         <div className="flex-1 flex flex-col space-y-4">
           {/* 配送結果 */}
-          <div className="w-full px-3 py-2 border border-gray-300 rounded-md">
+          <div className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md">
             <p>配送方法: {result === null ? "計算中..." : result.method}</p>
             <p>
               配送料:{" "}
