@@ -1,18 +1,21 @@
 import ProfitCalcUK from "@/app/tools/profit-calc-uk/ProfitCalcUK";
 import { Suspense } from "react";
 
-// （オマケだけど安全策として入れておくと良い）
 export const dynamic = "force-dynamic";
 
-export default function Page({
+export default async function Page({
   searchParams,
 }: {
-  searchParams: { mode?: string };
+  // ← ここを Promise にする
+  searchParams: Promise<{ mode?: string }>;
 }) {
+  // ← まず unwrap する
+  const params = await searchParams;
+
   const initialMode =
-    searchParams.mode === "reverse"
+    params.mode === "reverse"
       ? "reverse"
-      : searchParams.mode === "platform"
+      : params.mode === "platform"
       ? "platform"
       : "normal";
 

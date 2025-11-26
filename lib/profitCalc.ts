@@ -250,7 +250,7 @@ export function calculateFinalProfitDetailFromUSD({
 }
 
 /**
- * 目標利益率から売値 (GBP, VAT抜き) を二分探索で逆算する
+ * 目標利益率から売値 (GBP, VAT込み) を二分探索で逆算する
  * - calculateFinalProfitDetail に完全追従
  * - profitMargin は 「売上(円)に対する利益率」として扱う
  */
@@ -265,7 +265,7 @@ export function calculateSellingPriceFromProfitRateUK({
   payoneerFeePercent,
   exchangeRateGBPtoJPY,
   profitMode = "pure", // "pure" | "final"
-   debug = false,  
+  debug = false,
 }: {
   targetProfitRate: number; // パーセント値として扱う (5 = 5%, 30 = 30%)
   includeVAT?: boolean;
@@ -279,22 +279,22 @@ export function calculateSellingPriceFromProfitRateUK({
   profitMode?: "pure" | "final";
   debug?: boolean;
 }): {
-  priceGBPExVAT: number; // VAT 抜き売値(内部用)
-  priceGBPIncVAT: number; // VAT 抜き売値(内部用)
-  priceJPY: number; // VAT込み売値の円換算
+  priceGBPExVAT: number;    // VAT 抜き売値（探索した値）
+  priceGBPIncVAT: number;   // VAT 込み売値（calculateFinalProfitDetail に準拠）
+  priceJPY: number;         // VAT 込み売値の円換算
 } {
   if (!exchangeRateGBPtoJPY) {
-    throw new Error("exchageRateGBPtoJPY が必要です");
+    throw new Error("exchangeRateGBPtoJPY が必要です");
   }
   if (targetProfitRate < 0) {
-    throw new Error("tafgetProfitRate は 0 以上で指定してください");
+    throw new Error("targetProfitRate は 0 以上で指定してください");
   }
 
   const target = targetProfitRate / 100;
 
   const totalCostJPY = costPriceJPY + shippingJPY;
   if (totalCostJPY <= 0) {
-    throw new Error("コスト (仕入 + 送料)が0以下のため利益率が定義できません");
+    throw new Error("コスト (仕入 + 送料) が 0 以下のため利益率が定義できません");
   }
 
   const basePriceGBP = totalCostJPY / exchangeRateGBPtoJPY || 1;
@@ -306,33 +306,49 @@ export function calculateSellingPriceFromProfitRateUK({
 
   const tolerance = 0.0001;
 
-   
-  // 「売上に対する利益率 (少数)」を計算
-  const getProfitRate = (sellingPriceGBPExVAT: number): number => {
+  if (debug) {
+    console.log("== ReverseCalcUK start ==", {
+      targetProfitRatePercent: targetProfitRate,
+      targetProfitRate: target,
+      profitMode,
+      includeVAT,
+      params: {
+        costPriceJPY,
+        shippingJPY,
+        categoryFeePercent,
+        customsRatePercent,
+        payoneerFeePercent,
+        exchangeRateGBPtoJPY,
+      },
+      basePriceGBP,
+      initialLow: low,
+      initialHigh: high,
+    });
+  }
+
+  const getProfitRate = (sellingPriceGBPBase: number): number => {
+    // sellingPriceGBPBase は「VAT 判定前の基準価格（exVAT）」とみなす
     const detail = calculateFinalProfitDetail({
-      sellingPriceGBP: sellingPriceGBPExVAT,
+      sellingPriceGBP: sellingPriceGBPBase,
       costPriceJPY,
       shippingJPY,
       categoryFeePercent,
       customsRatePercent,
       payoneerFeePercent,
-      includeVAT,
+      includeVAT, // ★ ここで VAT 判定 & applyVAT される
       exchangeRateGBPtoJPY,
     });
-    // sellingPriceJPY は detail に入ってる前提
-    const sellingJPY = detail.sellingPriceJPY;
 
-    // 純利益ベース
+    const sellingJPY = detail.sellingPriceJPY; // ここは既存仕様に追従
+
     const pureMarginPercent =
       sellingJPY === 0 ? 0 : (detail.netProfitJPY / sellingJPY) * 100;
 
-    // 還付金込み（既存）
     const finalMarginPercent = detail.profitMargin;
 
     const marginPercent =
       profitMode === "pure" ? pureMarginPercent : finalMarginPercent;
 
-    // 0.05 とかにして返す
     return marginPercent / 100;
   };
 
@@ -340,13 +356,14 @@ export function calculateSellingPriceFromProfitRateUK({
     const mid = (low + high) / 2;
     const currentRate = getProfitRate(mid);
 
-      if (debug) {
-      console.log(`Iteration ${i}`, {
+    if (debug) {
+      console.log(`ReverseCalcUK Iteration ${i}`, {
         low,
         high,
         mid,
-        currentProfitRate: currentRate,          // 0.04996...
+        currentProfitRate: currentRate,           // 0.04996...
         currentProfitRatePercent: currentRate * 100, // 4.996...
+        diffFromTarget: currentRate - target,
       });
     }
 
@@ -359,32 +376,57 @@ export function calculateSellingPriceFromProfitRateUK({
       // 利益率が足りない → もっと値上げ
       low = mid;
     } else {
-      // 利益率が高すぎる →　もう少し値下げできる
+      // 利益率が高すぎる → もう少し値下げ
       high = mid;
     }
   }
 
-    if (debug) {
-    console.log("== ReverseCalcUK done ==", {
-      targetProfitRatePercent: targetProfitRate,
-      finalPriceGBPExVAT: low,
-    });
-  }
+  // ここで最終的な VAT 込み価格を「順行ロジックから」取得する
+  const finalDetail = calculateFinalProfitDetail({
+    sellingPriceGBP: low,
+    costPriceJPY,
+    shippingJPY,
+    categoryFeePercent,
+    customsRatePercent,
+    payoneerFeePercent,
+    includeVAT,
+    exchangeRateGBPtoJPY,
+  });
 
   const priceGBPExVAT = low;
+  const priceGBPIncVAT = finalDetail.adjustedPriceGBP; // ← VAT 判定後（順行と完全一致）
+  const priceJPY =
+    Math.ceil(priceGBPIncVAT * exchangeRateGBPtoJPY * 100) / 100;
 
-  // ===== VAT ルール（NomalView と揃える） =====
-  const VAT_RATE = 0.2;
-  const VAT_THRESHOLD_GBP = 135;
+  if (debug) {
+    const sellingJPY = finalDetail.sellingPriceJPY;
+    const pureMarginPercent =
+      sellingJPY === 0 ? 0 : (finalDetail.netProfitJPY / sellingJPY) * 100;
+    const finalMarginPercent = finalDetail.profitMargin;
+    const chosenMarginPercent =
+      profitMode === "pure" ? pureMarginPercent : finalMarginPercent;
 
-  let priceGBPIncVAT: number;
-  if (priceGBPExVAT <= VAT_THRESHOLD_GBP) {
-    priceGBPIncVAT = priceGBPExVAT * (1 + VAT_RATE);
-  } else {
-    priceGBPIncVAT = priceGBPExVAT;
+    console.log("== ReverseCalcUK done ==", {
+      targetProfitRatePercent: targetProfitRate,
+      profitMode,
+      includeVAT,
+      finalPriceGBPExVAT: priceGBPExVAT,
+      finalPriceGBPIncVAT: priceGBPIncVAT,
+      finalPriceJPY: priceJPY,
+      forwardDetail: {
+        adjustedPriceGBP: finalDetail.adjustedPriceGBP,
+        sellingPriceJPY: finalDetail.sellingPriceJPY,
+        netProfitJPY: finalDetail.netProfitJPY,
+        profitMarginPercent: finalDetail.profitMargin,
+      },
+      marginCheck: {
+        pureMarginPercent,
+        finalMarginPercent,
+        usedMarginPercent: chosenMarginPercent,
+        diffFromTargetPercent: chosenMarginPercent - targetProfitRate,
+      },
+    });
   }
-
-  const priceJPY = Math.ceil(priceGBPIncVAT * exchangeRateGBPtoJPY * 100) / 100;
 
   return {
     priceGBPExVAT,
