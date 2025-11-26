@@ -8,8 +8,6 @@ import { usePathname } from "next/navigation";
 const TOOL_MENU = [
   { href: "/tools/profit-calc-uk", label: "海外利益計算（UK版）" },
   { href: "/tools/profit-calc-us", label: "海外利益計算（US版）" },
-  { href: "/tools/shipping-us", label: "海外送料損益分岐点（US版）" },
-  { href: "/tools/others", label: "その他ツール" },
 ];
 
 export default function ToolsLayout({
