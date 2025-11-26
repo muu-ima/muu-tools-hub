@@ -14,7 +14,6 @@ UK / US の利益計算ツール、送料シミュレーター、共通 UI、設
 - **TypeScript**
 - **Tailwind CSS**
 - **Framer Motion**
-- Radix UI（一部）
 - Docker（開発用）
 - デプロイ: **Vercel**
 
@@ -30,21 +29,26 @@ page.tsx
 
 tools/
 profit-calc-uk/
+page.tsx
+profitCalcUK.tsx
+
 components/
 ChatIcon.tsx
 ExchangeRate.tsx
+Result.tsx
 FinalResultModal.tsx
 ModeSwitcherFab.tsx
-Result.tsx
+Tooltip.tsx
+
 hooks/
 useExchangeRate.ts
 useShipping.ts
 useTimeout.ts
+
 views/
 NomalView.tsx
 PlatformView.tsx
-page.tsx
-ProfitCalcUK.tsx
+ReverseView.tsx
 
 components/
 ExchangeRateBar.tsx
@@ -74,17 +78,37 @@ README.md
 
 ## 🇬🇧 UK 利益計算ツール
 
-- VAT 20%
-- **135ポンドルール完全対応**
-- USD → GBP → VAT → JPY の正確な変換
-- 利益 / 最終利益 / 利益率の自動計算
-- 二段変換なしの TypeScript ロジック
-- 入力値の型チェック（number / "" を正確にハンドリング）
+### ✨ 主な機能
 
-**関連ファイル：**
-- `app/tools/profit-calc-uk/ProfitCalcUK.tsx`
-- `lib/vatRule.ts`
-- `lib/profitCalc.ts`
+- VAT 20%（135ポンドルール完全対応）
+- USD → GBP → VAT → JPY の正確な変換
+- 利益 / 純利益 / 最終利益（還付金込み）の自動計算
+- 二段変換による TypeScript ロジック
+- 入力値の型チェック（number / "" の正確なハンドリング）
+- **逆算モード（Reverse Mode）対応**
+
+---
+
+## 🔄 逆算モード（Reverse Mode）
+
+**目標利益率（%）から売値（GBP, Ex-VAT / Inc-VAT）を二分探索で逆算します。**
+
+特徴：
+
+- **calculateFinalProfitDetail に完全追従した VAT 判定ロジック**  
+  → VAT 135GBP 閾値、VAT 20%、丸め処理をすべて一元化
+- 利益率の解釈：  
+  - `"pure"` → 売上ベースの純粋利益率  
+  - `"final"` → 還付金・手数料込みの最終利益率
+- GBP / USD クロス計算にも対応  
+- 順行ロジックと逆算ロジックが完全一致  
+- 最大 100 回の二分探索による安定収束
+
+**関連ファイル**  
+- `lib/profitCalc.ts`  
+- `app/tools/profit-calc-uk/views/ReverseView.tsx`
+
+---
 
 ## 📦 セットアップ
 
@@ -110,6 +134,25 @@ npm run dev
 👉 http://localhost:3000 にアクセス
 
 ---
+
+🧩 各ツールの概要
+🇬🇧 UK 利益計算
+
+VAT 自動判定
+
+135GBP ルールの厳密処理
+
+Payoneer 手数料 + 商品カテゴリ手数料
+
+GBP / USD / JPY の三通貨クロスレート対応
+
+📦 送料シミュレーター
+
+Auto / Manual モード
+
+容積重量 vs 実重量の大きい方を採用
+
+JSON ベースで配送テーブルを統合管理
 
 ## 👤 Author
 
