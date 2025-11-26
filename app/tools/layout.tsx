@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+
 const TOOL_MENU = [
   { href: "/tools/profit-calc-uk", label: "海外利益計算（UK版）" },
   { href: "/tools/profit-calc-us", label: "海外利益計算（US版）" },
@@ -17,18 +18,21 @@ export default function ToolsLayout({
 }) {
   const pathname = usePathname();
   const isRoot = pathname === "/tools";
+  const isUS = pathname.startsWith("/tools/profit-calc-us");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div
-      className="
-        relative
-        min-h-screen flex flex-col 
-        bg-(--background) text-(--foreground)
-        bg-[url('/cocco-bg-4.png')]
-        bg-cover bg-center bg-no-repeat
-      "
-    >
+    className={`
+      relative min-h-screen flex flex-col 
+      bg-(--background) text-(--foreground)
+      ${isUS 
+        ? "bg-[url('/cocco-bg-6.png')]"  // ← US専用背景
+        : "bg-[url('/cocco-bg-4.png')]" // ← UK & その他
+      }
+      bg-cover bg-center bg-no-repeat
+    `}
+  >
       {/* ▼ 共通ヘッダー */}
       <header
         className="

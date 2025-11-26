@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { getCheapestShipping, ShippingData } from "@/lib/shipping";
 import ExchangeRate from "@/app/tools/profit-calc-us/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-us/components/Result";
+import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
 import {
   calculateFinalProfitDetailUS,
   calculateCategoryFeeUS,
@@ -38,16 +39,19 @@ type CalcResult = {
 
 export default function NomalView() {
   // ====== State ======
-  const [shippingRates, setShippingRates] = useState<ShippingData | null>(null);
+  const [rate, setRate] = useState<number | null>(null);
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPrice, setSellingPrice] = useState<string>("");
-  const [weight, setWeight] = useState<number | null>(null);
-  const [dimensions, setDimensions] = useState({
-    length: 0,
-    width: 0,
-    height: 0,
-  });
-  const [rate, setRate] = useState<number | null>(null);
+
+   // ====== 配送 ======
+   const {
+    weight,
+    setWeight,
+    dimensions,
+    setDimensions,
+   } = useShippingUS();
+
+  const [shippingRates, setShippingRates] = useState<ShippingData | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<CategoryFeeType[]>([]);
   const [selectedCategoryFee, setSelectedCategoryFee] = useState<number | "">(
     ""
