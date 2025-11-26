@@ -31,26 +31,6 @@ const tools: ToolLink[] = [
     description: "USD → JPY / US向け送料・手数料対応版。",
     href: "/tools/profit-calc-us",
   },
-  {
-    id: "shipping-sim",
-    name: "海外利益損益分岐点（US版）",
-    description: "EMS / eパケット / FedEx などから最安発送方法を検索。",
-    href: "https://enyukari.capoo.jp/shipping-manager",
-  },
-  {
-    id: "shopify",
-    name: "海外利益損益分岐点（US版）",
-    description: "今後追加予定の社内ツール群。",
-    href: "https://enyukari.capoo.jp",
-    badge: "WIP",
-  },
-  {
-    id: "others",
-    name: "その他ツール",
-    description: "今後追加予定の社内ツール群。",
-    href: "https://enyukari.capoo.jp",
-    badge: "WIP",
-  },
 ];
 
 export default function Page() {
@@ -62,23 +42,33 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white/70 backdrop-blur-[2px] relative">
+    <div className="min-h-screen flex flex-col bg-white/70 relative">
+
       {/* 🐱 トップページ専用の猫背景 */}
       <div
         className="
-    pointer-events-none
-    fixed inset-0 -z-10
-    bg-[url('/cocco-bg-2.png')]
-    bg-no-repeat
-    bg-size-[1200px_auto]    
-    bg-position-[left_100px_top_140px]
-  "
+          pointer-events-none
+          fixed inset-0 -z-20
+          bg-[url('/cocco-bg-2.png')]
+          bg-no-repeat
+          bg-size-[1200px_auto]    
+          bg-position-[left_100px_top_140px]
+        "
+      />
+
+      {/* ✨ 背景ぼかしレイヤー（追加） */}
+      <div
+        className="
+          pointer-events-none
+          fixed inset-0 -z-10
+          backdrop-blur-[1px]
+        "
       />
 
       {/* ヘッダー（為替バー付き） */}
       <SiteHeader />
 
-      {/* メイン：スケルトン or カード */}
+      {/* メイン */}
       <main className="flex-1 px-4 py-8 md:py-10">
         <div className="mx-auto max-w-6xl relative">
           {loading ? (
@@ -99,16 +89,17 @@ export default function Page() {
                   key={tool.id}
                   href={tool.href}
                   className="
-                  group block rounded-2xl
-                  bg-white/40        /* ← ほぼ透明 */
-                   backdrop-blur-[2px]
-                  border border-white/30
-                  shadow-[0_3px_8px_rgba(0,0,0,0.08)]
-                  p-5
-                  transition-all
-                  hover:bg-white/40        /* ← hoverで少し白くする */
-                  hover:shadow-[0_8px_25px_rgba(0,0,0,0.25)]
-                  hover:border-white/60                "
+                    group block rounded-2xl
+                    bg-white/40
+                    backdrop-blur-[2px]
+                    border border-white/30
+                    shadow-[0_3px_8px_rgba(0,0,0,0.08)]
+                    p-5
+                    transition-all
+                    hover:bg-white/40
+                    hover:shadow-[0_8px_25px_rgba(0,0,0,0.25)]
+                    hover:border-white/60
+                  "
                   target="_blank"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -121,6 +112,7 @@ export default function Page() {
                       </span>
                     )}
                   </div>
+
                   <p className="text-sm text-slate-600">{tool.description}</p>
                   <p className="mt-3 text-[11px] text-slate-400">
                     クリックすると新しいタブで開きます。
