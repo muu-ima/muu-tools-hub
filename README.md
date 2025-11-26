@@ -21,53 +21,69 @@ UK / US の利益計算ツール、送料シミュレーター、共通 UI、設
 
 # 📁 プロジェクト構成（実際の構成に基づく）
 
+```text
 app/
-globals.css
-layout.tsx
-Loading.tsx
-page.tsx
+  globals.css
+  layout.tsx
+  Loading.tsx
+  page.tsx
 
-tools/
-profit-calc-uk/
-page.tsx
-profitCalcUK.tsx
+  tools/
+    layout.tsx
+    page.tsx
+
+    profit-calc-uk/
+      page.tsx
+      ProfitCalcUK.tsx
+      components/
+        ChatIcon.tsx
+        ExchangeRate.tsx
+        Result.tsx
+        FinalResultModal.tsx
+        ModeSwitcherFab.tsx
+        Tooltip.tsx
+      hooks/
+        useExchange.Rate.ts
+        useShipping.ts
+        useTimeout.ts
+        useProfitCalc.ts
+      views/
+        NomalView.tsx
+        PlatformView.tsx
+        ReverseView.tsx
+
+    profit-calc-us/
+      page.tsx
+      ProfitCalcUS.tsx
+      components/
+        ExchangeRate.tsx
+        Result.tsx
+        FinalResultModal.tsx
+      hooks/
+        useProfitCalcUS.ts
+      views/
+        NomalView.tsx
 
 components/
-ChatIcon.tsx
-ExchangeRate.tsx
-Result.tsx
-FinalResultModal.tsx
-ModeSwitcherFab.tsx
-Tooltip.tsx
-
-hooks/
-useExchangeRate.ts
-useShipping.ts
-useTimeout.ts
-
-views/
-NomalView.tsx
-PlatformView.tsx
-ReverseView.tsx
-
-components/
-ExchangeRateBar.tsx
-SiteFooter.tsx
-SiteHeader.tsx
-Spinner.tsx
-ToolCardSkeleton.tsx
+  ExchangeRateBar.tsx
+  SiteFooter.tsx
+  SiteHeader.tsx
+  Spinner.tsx
+  ToolCardSkeleton.tsx
 
 lib/
-price.ts
-profitCalc.ts
-shipping.ts
-vatRule.ts
+  price.ts
+  profitCalc.ts        // UK 版コアロジック
+  profitCalcUS.ts      // US 版コアロジック
+  shipping.ts
+  vatRule.ts
 
 types/
-profit.ts
+  profit.ts            // UK 版用型
+  profitCalc.ts        // US 版用型
 
 public/
-images / favicon 等
+  images / favicon 等
 
 Dockerfile
 docker-compose.yml
@@ -76,39 +92,105 @@ package.json
 postcss.config.mjs
 README.md
 
-## 🇬🇧 UK 利益計算ツール
 
-### ✨ 主な機能
+🇬🇧 UK 利益計算ツール
+✨ 主な機能
 
-- VAT 20%（135ポンドルール完全対応）
-- USD → GBP → VAT → JPY の正確な変換
-- 利益 / 純利益 / 最終利益（還付金込み）の自動計算
-- 二段変換による TypeScript ロジック
-- 入力値の型チェック（number / "" の正確なハンドリング）
-- **逆算モード（Reverse Mode）対応**
+VAT 20%（135ポンドルール完全対応）
 
----
+GBP / USD / JPY の三通貨クロスレート対応
 
-## 🔄 逆算モード（Reverse Mode）
+利益 / 純利益 / 最終利益（還付金込み）の自動計算
 
-**目標利益率（%）から売値（GBP, Ex-VAT / Inc-VAT）を二分探索で逆算します。**
+Payoneer 手数料・カテゴリ手数料・両替手数料を一括計算
 
-特徴：
+入力値の型チェック（number | "" の正確なハンドリング）
 
-- **calculateFinalProfitDetail に完全追従した VAT 判定ロジック**  
-  → VAT 135GBP 閾値、VAT 20%、丸め処理をすべて一元化
-- 利益率の解釈：  
-  - `"pure"` → 売上ベースの純粋利益率  
-  - `"final"` → 還付金・手数料込みの最終利益率
-- GBP / USD クロス計算にも対応  
-- 順行ロジックと逆算ロジックが完全一致  
-- 最大 100 回の二分探索による安定収束
+🧭 モード構成
 
-**関連ファイル**  
-- `lib/profitCalc.ts`  
-- `app/tools/profit-calc-uk/views/ReverseView.tsx`
+Normal Mode
+通常の順行計算。売値・仕入れ・配送料から最終利益を算出。
 
----
+Platform Mode
+eBay / Amazon のような「プラットフォーム手数料前提」の計算モード。
+VAT 込み / VAT 抜き手数料モードを切り替え可能。
+
+Reverse Mode（逆算モード）
+目標利益率から「必要な売値」を二分探索で逆算。
+
+🔄 逆算モード（Reverse Mode）の概要
+
+目標利益率（%）から売値（GBP, Ex-VAT / Inc-VAT）を二分探索で逆算 します。
+
+calculateFinalProfitDetail と完全同期した VAT 判定ロジック
+
+135GBP 閾値 / VAT 20% / 丸め処理 などを一元管理
+
+利益率の解釈
+
+"pure" → 売上ベースの純粋利益率
+
+"final" → 還付金・手数料込みの最終利益率
+
+順行ロジックと逆算ロジックが完全一致
+
+最大 100 回の二分探索で安定収束
+
+関連ファイル
+
+lib/profitCalc.ts
+
+app/tools/profit-calc-uk/views/ReverseView.tsx
+
+🇺🇸 US 利益計算ツール
+✨ 主な機能
+
+US マーケット（eBay US 想定）のロジックを実装した利益計算ツールです。
+
+USD → JPY の為替計算（Hub 内 API / JSON から取得）
+
+州税 6.71% を売上に加算したうえで手数料を計算
+
+プラットフォーム手数料・決済手数料を 州税込売上 から算出
+
+Final Value Fee（固定 0.40 USD）を含めた総手数料計算
+
+手数料に対するタックス（10%）を別項目で計上
+
+Payoneer 手数料（粗利 2%）・両替手数料（1USD あたり 3.3 円）を自動計算
+
+税還付金・手数料還付金を JPY ベースで考慮した 最終損益 を表示
+
+📊 表示内容（US）
+
+売上（税抜 / 州税込）USD & 円換算
+
+配送方法 / 配送料（USD & JPY）
+
+仕入れ（USD & JPY）
+
+カテゴリ手数料 / 決済手数料 / 手数料税 / Payoneer 手数料
+
+為替手数料（USD & JPY）
+
+税還付金 / 手数料還付金
+
+利益（売上 − 仕入 − 送料）
+
+最終損益（還付金込み）
+
+利益率（％）
+
+関連ファイル
+
+lib/profitCalcUS.ts
+
+app/tools/profit-calc-us/views/NomalView.tsx
+
+app/tools/profit-calc-us/components/Result.tsx
+
+app/tools/profit-calc-us/components/FinalResultModal.tsx
+
 
 ## 📦 セットアップ
 
@@ -138,19 +220,29 @@ npm run dev
 🧩 各ツールの概要
 🇬🇧 UK 利益計算
 
-VAT 自動判定
-
-135GBP ルールの厳密処理
+VAT 自動判定（135GBP ルール含む）
 
 Payoneer 手数料 + 商品カテゴリ手数料
 
 GBP / USD / JPY の三通貨クロスレート対応
 
-📦 送料シミュレーター
+Normal / Platform / Reverse の 3 モード
+
+🇺🇸 US 利益計算
+
+州税 6.71% + 手数料税 10%
+
+プラットフォーム手数料・決済手数料・Final Value Fee
+
+Payoneer 手数料（粗利 2%）・両替手数料（1USD あたり 3.3円）
+
+税還付金・手数料還付金を含めた最終損益の表示
+
+📦 送料シミュレーター（共通）
 
 Auto / Manual モード
 
-容積重量 vs 実重量の大きい方を採用
+容積重量 vs 実重量の大きい方を自動採用
 
 JSON ベースで配送テーブルを統合管理
 
