@@ -10,6 +10,8 @@ import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcU
 
 import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
 
+import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
+
 export default function NomalView() {
   // ====== State ======
   const [rate, setRate] = useState<number | null>(null);
@@ -17,6 +19,9 @@ export default function NomalView() {
   const [sellingPrice, setSellingPrice] = useState<string>("");
 
   const [isOpen, setIsOpen] = useState(false);
+
+  // ====== タイマー（ローディング演出用） ======
+  const timeoutReached = useTimeout(5000);
 
   // ====== 配送（hook） ======
   const {
@@ -53,9 +58,18 @@ export default function NomalView() {
   const sellingPriceNum = sellingPrice !== "" ? parseFloat(sellingPrice) : 0;
   const sellingPriceInclTax = sellingPriceNum + sellingPriceNum * stateTaxRate;
 
+  // ====== ローディング判定 ======
+  const coreReady = rate !== null && categoryOptions.length > 0;
+  const isLoadingAll = !coreReady && !timeoutReached;
+
   // ====== UI ======
   return (
-    <div className="py-4">
+    <div
+      className={`
+        py-4 transition-all duration-300
+        ${isLoadingAll ? "blur-sm opacity-60" : "opacity-100 blur-0"}
+      `}
+    >
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           ProfitCalc (US)
