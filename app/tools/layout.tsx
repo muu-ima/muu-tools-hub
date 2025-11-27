@@ -152,7 +152,7 @@ export default function ToolsLayout({
         <div className="mx-auto max-w-screen-2xl">{children}</div>
       </main>
 
-      {/* ▼ 右下の猫デコレーション */}
+       {/* ▼ 右下のデコレーション（UK=猫 / US=犬） */}
       <div
         className="
           pointer-events-none
@@ -163,7 +163,11 @@ export default function ToolsLayout({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/cocco-bg-cat.png"
+          src={
+            isUS
+              ? "/cocco-bg-dog.png" // 🐶 US版 → 犬
+              : "/cocco-bg-cat.png" // 🐱 UK版 → 猫
+          }
           alt=""
           className="max-w-[700px] drop-shadow-lg"
         />
