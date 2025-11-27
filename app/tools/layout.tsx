@@ -27,7 +27,7 @@ export default function ToolsLayout({
       relative min-h-screen flex flex-col 
       bg-(--background) text-(--foreground)
       ${isUS 
-        ? "bg-[url('/cocco-bg-6.png')]"  // ← US専用背景
+        ? "bg-[url('/cocco-bg-10.png')]"  // ← US専用背景
         : "bg-[url('/cocco-bg-4.png')]" // ← UK & その他
       }
       bg-cover bg-center bg-no-repeat
