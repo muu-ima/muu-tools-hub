@@ -1,3 +1,5 @@
+// app/tools/profit-calc-us/hooks/useShippingUS.ts
+
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { getCheapestShipping, ShippingData } from "@/lib/shipping";
@@ -16,12 +18,37 @@ export function useShippingUS() {
     height: 0,
   });
 
-  // 配送料 JSON 読み込み
-  useEffect(() => {
-    fetch("/data/shipping.json")
-      .then(res => res.json())
-      .then(data => setShippingRates(data));
-  }, []);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() =>{
+    let cancelled = false;
+  
+  const fetchShipping = async () => {
+    try {
+      const res = await fetch("/data/shipping.json");
+      const data : ShippingData = await res.json();
+      if(!cancelled) {
+        setShippingRates(data);
+      }
+    } catch(error) {
+      console.error("shipping.jsonの読み込みに失敗しました",error);
+      if(!cancelled) {
+        setShippingRates(null);
+      }
+    } finally {
+      if(!cancelled) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  fetchShipping();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
 
   // useMemo → ESLint OK（useEffect-setState禁止を回避）
   const result: ShippingResult | null = useMemo(() => {
@@ -35,5 +62,6 @@ export function useShippingUS() {
     dimensions,
     setDimensions,
     result,
+    isLoading,
   };
 }

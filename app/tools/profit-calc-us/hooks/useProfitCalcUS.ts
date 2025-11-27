@@ -1,3 +1,5 @@
+// app/tools/profit-calc-us/hooks/useProfitCalcUS.ts
+
 "use client";
 
 import { useMemo } from "react";

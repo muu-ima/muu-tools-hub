@@ -1,3 +1,5 @@
+// app/tools/profit-calc-us/hooks/useExchangeRateUS.ts
+
 "use client";
 import { useEffect, useState } from "react";
 

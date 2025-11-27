@@ -1,41 +1,14 @@
 // app/tools/profit-calc-us/views/NomalView.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { getCheapestShipping, ShippingData } from "@/lib/shipping";
+import React, { useEffect, useState } from "react";
 import ExchangeRate from "@/app/tools/profit-calc-us/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-us/components/Result";
 import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
-import {
-  calculateFinalProfitDetailUS,
-  calculateCategoryFeeUS,
-  calculateActualCost,
-  calculateGrossProfit,
-  calculateProfitMargin,
-} from "@/lib/profitCalcUS";
+import { useCategoryFeeUS } from "@/app/tools/profit-calc-us/hooks/useCategoryFeeUS";
+import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcUS";
+
 import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
-// 型定義
-type ShippingResult = {
-  method: string;
-  price: number | null;
-};
-
-type CategoryFeeType = {
-  label: string;
-  value: number;
-  categories: string[];
-};
-
-type CalcResult = {
-  shippingJPY: number;
-  categoryFeeJPY: number;
-  actualCost: number;
-  grossProfit: number;
-  profitMargin: number;
-  method: string;
-  rate: number;
-  sellingPriceJPY: number;
-};
 
 export default function NomalView() {
   // ====== State ======
@@ -43,36 +16,21 @@ export default function NomalView() {
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPrice, setSellingPrice] = useState<string>("");
 
-   // ====== 配送 ======
-   const {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // ====== 配送（hook） ======
+  const {
     weight,
     setWeight,
     dimensions,
     setDimensions,
-   } = useShippingUS();
+    result,
+    isLoading: isShippingLoading,
+  } = useShippingUS();
 
-  const [shippingRates, setShippingRates] = useState<ShippingData | null>(null);
-  const [categoryOptions, setCategoryOptions] = useState<CategoryFeeType[]>([]);
-  const [selectedCategoryFee, setSelectedCategoryFee] = useState<number | "">(
-    ""
-  );
-  const [isOpen, setIsOpen] = useState(false);
-
-  // ====== 外部データ取得 ======
-
-  // 配送料テーブル
-  useEffect(() => {
-    fetch("/data/shipping.json")
-      .then((res) => res.json())
-      .then((data) => setShippingRates(data));
-  }, []);
-
-  // カテゴリ手数料テーブル
-  useEffect(() => {
-    fetch("/data/categoryFees.json")
-      .then((res) => res.json())
-      .then((data) => setCategoryOptions(data));
-  }, []);
+  // ====== カテゴリ手数料（hook） ======
+  const { categoryOptions, selectedCategoryFee, setSelectedCategoryFee } =
+    useCategoryFeeUS();
 
   // 為替のログ（デバッグ用）
   useEffect(() => {
@@ -81,99 +39,19 @@ export default function NomalView() {
     }
   }, [rate]);
 
-  // ====== 配送結果（useMemo） ======
-  const result: ShippingResult | null = useMemo(() => {
-    if (!shippingRates || weight == null || weight <= 0) return null;
-    return getCheapestShipping(shippingRates, weight, dimensions);
-  }, [shippingRates, weight, dimensions]);
+  // ====== 利益計算（hook） ======
+  const { calcResult, final, isEnabled } = useProfitCalcUS({
+    sellingPrice,
+    costPrice,
+    rate,
+    result,
+    selectedCategoryFee,
+  });
 
-  // ====== 利益計算（useMemo） ======
-  const calcResult: CalcResult | null = useMemo(() => {
-    if (
-      sellingPrice === "" ||
-      costPrice === "" ||
-      rate === null ||
-      weight === null ||
-      result === null ||
-      result.price === null ||
-      selectedCategoryFee === ""
-    ) {
-      return null;
-    }
-
-    const sellingPriceUSD = parseFloat(sellingPrice);
-    if (Number.isNaN(sellingPriceUSD)) return null;
-
-    const rateSafe = rate ?? 0;
-    const shippingJPY = result.price ?? 0;
-
-    // 売値（円換算）
-    const sellingPriceJPY = sellingPriceUSD * rateSafe;
-
-    // カテゴリ手数料率(%)
-    const categoryFeePercent =
-      typeof selectedCategoryFee === "number"
-        ? selectedCategoryFee
-        : Number(selectedCategoryFee);
-
-    // カテゴリ手数料(JPY)
-    const categoryFeeJPY = calculateCategoryFeeUS(
-      sellingPriceJPY,
-      categoryFeePercent
-    );
-
-    // 仕入れ(JPY)
-    const costJPY =
-      typeof costPrice === "number" ? costPrice : Number(costPrice);
-
-    // 実費合計
-    const actualCost = calculateActualCost(
-      costJPY,
-      shippingJPY,
-      categoryFeeJPY
-    );
-
-    // 粗利 / 利益率（売値JPYベース）
-    const grossProfit = calculateGrossProfit(sellingPriceJPY, actualCost);
-    const profitMargin = calculateProfitMargin(grossProfit, sellingPriceJPY);
-
-    return {
-      shippingJPY,
-      categoryFeeJPY,
-      actualCost,
-      grossProfit,
-      profitMargin,
-      method: result.method,
-      rate: rateSafe,
-      sellingPriceJPY,
-    };
-  }, [sellingPrice, costPrice, rate, weight, result, selectedCategoryFee]);
-
-  // ====== Final 計算（Modal用） ======
+  // 売値 + 州税（Result 用表示）
   const stateTaxRate = 0.0671;
   const sellingPriceNum = sellingPrice !== "" ? parseFloat(sellingPrice) : 0;
   const sellingPriceInclTax = sellingPriceNum + sellingPriceNum * stateTaxRate;
-
-  const final = calcResult
-    ? calculateFinalProfitDetailUS({
-        sellingPrice: sellingPriceNum,
-        costPrice: typeof costPrice === "number" ? costPrice : 0,
-        shippingJPY: calcResult.shippingJPY,
-        categoryFeePercent: (selectedCategoryFee || 0) as number,
-        paymentFeePercent: 1.35, // 決済手数料(%)
-        exchangeRateUSDtoJPY: rate ?? 0,
-        targetMargin: 0.3,
-      })
-    : null;
-
-  // ====== ボタン活性 ======
-  const isEnabled =
-    !Number.isNaN(sellingPriceNum) &&
-    sellingPrice !== "" &&
-    costPrice !== "" &&
-    rate !== null &&
-    weight !== null &&
-    selectedCategoryFee !== "";
 
   // ====== UI ======
   return (
@@ -327,16 +205,27 @@ export default function NomalView() {
         {/* 右カラム */}
         <div className="flex-1 flex flex-col space-y-4">
           {/* 配送結果 */}
-          <div className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md">
-            <p>配送方法: {result === null ? "計算中..." : result.method}</p>
-            <p>
-              配送料:{" "}
-              {result === null
-                ? "計算中..."
-                : result.price !== null
-                ? `${result.price}円`
-                : "不明"}
-            </p>
+          <div className="w-full px-4 py-4 bg-white border border-neutral-300 rounded-lg shadow-sm">
+            {isShippingLoading ? (
+              <>
+                <p className="text-sm text-neutral-700">配送方法: 計算中...</p>
+                <p className="text-sm text-neutral-700">配送料: 計算中...</p>
+              </>
+            ) : result === null ? (
+              <>
+                <p className="text-sm text-neutral-700">配送方法: 未計算</p>
+                <p className="text-sm text-neutral-700">配送料: 未計算</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-neutral-700">
+                  配送方法: {result.method}
+                </p>
+                <p className="text-sm text-neutral-700">
+                  配送料: {result.price}円
+                </p>
+              </>
+            )}
           </div>
 
           {/* 利益結果 */}
