@@ -229,7 +229,7 @@ export default function ProductsPageClient() {
             {meta.page > 1 && (
               <Link
                 href={{
-                  pathname: "/products",
+                  pathname: "/tools/shipping-manager/products",
                   query: { ...sp, page: String(meta.page - 1) },
                 }}
                 prefetch={false}
@@ -252,7 +252,7 @@ export default function ProductsPageClient() {
                   <Link
                     key={pageNum}
                     href={{
-                      pathname: "/products",
+                      pathname: "/tools/shipping-manager/products",
                       query: { ...sp, page: String(pageNum) },
                     }}
                     prefetch={false}
@@ -286,7 +286,7 @@ export default function ProductsPageClient() {
             {meta.page < meta.pages && (
               <Link
                 href={{
-                  pathname: "/products",
+                  pathname: "/tools/shipping-manager/products",
                   query: { ...sp, page: String(meta.page + 1) },
                 }}
                 prefetch={false}
