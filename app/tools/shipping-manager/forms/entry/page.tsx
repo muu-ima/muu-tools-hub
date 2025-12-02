@@ -1,19 +1,22 @@
-'use client';
+// app/tools/shipping-manager/forms/entry/page.tsx
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function FormEntryPage() {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (code === process.env.NEXT_PUBLIC_FORM_SECRET) {
-      localStorage.setItem('form_pass', code);
-      router.push('/forms/new');
+      // OK のときだけフラグを保存
+      localStorage.setItem("form_pass", code);
+      router.push("/tools/shipping-manager/forms/new");
     } else {
-      alert('パスコードが違います');
+      alert("パスコードが違います");
     }
   };
 

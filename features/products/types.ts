@@ -1,6 +1,6 @@
-// src/features/products/types.ts
+// app/features/products/types.ts
 import type { WPProduct } from "@/types/wp";
-import type { CategorySlug } from "./constants";
+import type { CategorySlug } from "@/features/products/constans";
     
 export type ProductMeta = {
   shipping_actual_yen?: number | string;
