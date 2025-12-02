@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CategorySlug } from "@/features/products/constans";
+import type { CategorySlug } from "@/features/products/constants";
 import {
   type FormState,
   type ProductInitial,
