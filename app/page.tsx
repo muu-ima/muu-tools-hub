@@ -23,14 +23,21 @@ const tools: ToolLink[] = [
     name: "海外利益計算（UK版）",
     description: "GBP → JPY / 135GBPルール対応の利益計算ツール。",
     href: "/tools/profit-calc-uk",
-    badge: "社内用",
+    badge: "計算アプリ",
   },
   {
     id: "profit-us",
     name: "海外利益計算（US版）",
     description: "USD → JPY / US向け送料・手数料対応版。",
     href: "/tools/profit-calc-us",
-    badge: "社内用",
+    badge: "計算アプリ",
+  },
+  {
+    id: "shipping-manager",
+    name: "海外発送情報管理システム",
+    description: "発送情報を管理。",
+    href: "/tools/shipping-manager/",
+    badge: "管理システム",
   },
 ];
 

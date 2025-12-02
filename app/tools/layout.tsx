@@ -10,7 +10,7 @@ const TOOL_MENU = [
   { href: "/tools/profit-calc-uk", label: "海外利益計算（UK版）" },
   { href: "/tools/profit-calc-us", label: "海外利益計算（US版）" },
     {
-    href: "/tools/shipping-manager/products", 
+    href: "/tools/shipping-manager", 
     label: "発送管理（Products）",  
   },
 ];

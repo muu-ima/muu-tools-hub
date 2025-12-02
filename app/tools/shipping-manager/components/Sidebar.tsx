@@ -101,7 +101,7 @@ export default function Sidebar({
             {SHEETS.map((s) => (
               <Link
                 key={s.key}
-                href={{ pathname: "/tools/shipping-manager/products", query: { ...sp, sheet: s.key } }}
+                href={{ pathname: "/tools/shipping-manager/", query: { ...sp, sheet: s.key } }}
                 prefetch={false}
                 className={[
                   "w-full px-4 py-2 rounded-lg text-sm font-medium text-left",
@@ -223,7 +223,7 @@ export default function Sidebar({
               絞り込む
             </button>
             <Link
-              href={{ pathname: "/tools/shipping-manager/products", query: { sheet } }}
+              href={{ pathname: "/tools/shipping-manager/", query: { sheet } }}
               prefetch={false}
               className="text-sm text-gray-500 hover:underline text-center"
             >
