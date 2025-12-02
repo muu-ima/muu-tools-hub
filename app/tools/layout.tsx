@@ -11,7 +11,7 @@ const TOOL_MENU = [
   { href: "/tools/profit-calc-us", label: "海外利益計算（US版）" },
     {
     href: "https://shipping-manager.vercel.app/products", 
-    label: "発送管理（Products）",
+    label: "発送管理（Products）",  
   },
 ];
 
