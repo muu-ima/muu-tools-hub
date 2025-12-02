@@ -1,4 +1,4 @@
-// src/app/forms/new/page.tsx
+// app/tools/shipping-manager/forms/new/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -29,7 +29,7 @@ export default function SecretFormPage() {
   useEffect(() => {
     const pass = localStorage.getItem('form_pass');
     if (pass !== process.env.NEXT_PUBLIC_FORM_SECRET) {
-      router.replace('/forms/entry'); // 認証ページに飛ばす
+      router.replace("/tools/shipping-manager/forms/entry");
     }
   }, [router]);
 
@@ -104,7 +104,7 @@ export default function SecretFormPage() {
                 閉じる
               </button>
               <button
-                onClick={() => router.push('/products')}
+                onClick={() => router.push('/tools/shipping-manager/')}
                 className="rounded border px-3 py-2 text-sm"
               >
                 一覧へ

@@ -1,4 +1,4 @@
-// src/features/products/utils.ts
+// app/features/products/utils.ts
 import type { ProductMeta, SearchItem } from "@/features/products/types";
 
 export const fmtNum = (v: unknown) =>

@@ -1,4 +1,4 @@
-// src/features/products/productTypes.ts
+// app/features/products/productTypes.ts
 import type { CategorySlug } from "@/features/products/constans";
 
 export const SHEETS = [

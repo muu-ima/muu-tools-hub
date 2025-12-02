@@ -1,4 +1,4 @@
-// src/features/products/api.ts
+// app/features/products/api.ts
 import type { SearchResponse } from "@/features/products/types";
 
 export type ProductsApiParams = Record<

@@ -1,4 +1,4 @@
-// src/features/products/constants.ts
+// app/features/products/constants.ts
 export const CATEGORY_LABELS: Record<string, string> = {
   'game-console': 'game&console',
   household: 'Household goods',

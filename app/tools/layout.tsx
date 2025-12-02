@@ -5,13 +5,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-
 const TOOL_MENU = [
   { href: "/tools/profit-calc-uk", label: "海外利益計算（UK版）" },
   { href: "/tools/profit-calc-us", label: "海外利益計算（US版）" },
-    {
-    href: "/tools/shipping-manager", 
-    label: "発送管理（Products）",  
+  {
+    href: "/tools/shipping-manager",
+    label: "発送管理（Products）",
   },
 ];
 
@@ -23,20 +22,25 @@ export default function ToolsLayout({
   const pathname = usePathname();
   const isRoot = pathname === "/tools";
   const isUS = pathname.startsWith("/tools/profit-calc-us");
+  const isShippingManager = pathname.startsWith("/tools/shipping-manager");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div
-    className={`
-      relative min-h-screen flex flex-col 
-      bg-(--background) text-(--foreground)
-      ${isUS 
-        ? "bg-[url('/cocco-bg-10.png')]"  // ← US専用背景
-        : "bg-[url('/cocco-bg-4.png')]" // ← UK & その他
-      }
-      bg-cover bg-center bg-no-repeat
-    `}
-  >
+      className={`
+        relative min-h-screen flex flex-col 
+        bg-(--background) text-(--foreground)
+
+        ${
+          isShippingManager
+            ? "bg-neutral-100" // ← ★ 発送管理だけは背景画像なし・モノトーン
+            : isUS
+            ? "bg-[url('/cocco-bg-10.png')]" // US
+            : "bg-[url('/cocco-bg-4.png')]" // UK & その他
+        }
+        bg-cover bg-center bg-no-repeat
+      `}
+    >
       {/* ▼ 共通ヘッダー */}
       <header
         className="
@@ -156,26 +160,24 @@ export default function ToolsLayout({
         <div className="mx-auto max-w-screen-2xl">{children}</div>
       </main>
 
-       {/* ▼ 右下のデコレーション（UK=猫 / US=犬） */}
-      <div
-        className="
-          pointer-events-none
-          absolute right-8 bottom-30
-          hidden xl:block
-        "
-        aria-hidden="true"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={
-            isUS
-              ? "/cocco-bg-dog.png" // 🐶 US版 → 犬
-              : "/cocco-bg-cat.png" // 🐱 UK版 → 猫
-          }
-          alt=""
-          className="max-w-[700px] drop-shadow-lg"
-        />
-      </div>
+      {/* ▼ 右下のデコレーション（UK=猫 / US=犬） */}
+      {!isShippingManager && (
+        <div
+          className="
+      pointer-events-none
+      absolute right-8 bottom-30
+      hidden xl:block
+    "
+          aria-hidden="true"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={isUS ? "/cocco-bg-dog.png" : "/cocco-bg-cat.png"}
+            alt=""
+            className="max-w-[700px] drop-shadow-lg"
+          />
+        </div>
+      )}
 
       {/* ▼ 共通フッター */}
       <footer className="py-6 text-center text-xs text-neutral-400">
