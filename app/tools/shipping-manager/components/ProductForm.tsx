@@ -4,8 +4,8 @@ import React from "react";
 import {
   CATEGORY_LABELS,
   CATEGORY_SLUGS,
-} from "@/features/products/constans";
-import type { CategorySlug } from "@/features/products/constans";
+} from "@/features/products/constants";
+import type { CategorySlug } from "@/features/products/constants";
 import LoadingOverlay from "./LoadingOverlay";
 
 import {

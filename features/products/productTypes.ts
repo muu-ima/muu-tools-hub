@@ -1,5 +1,5 @@
 // app/features/products/productTypes.ts
-import type { CategorySlug } from "@/features/products/constans";
+import type { CategorySlug } from "@/features/products/constants";
 
 export const SHEETS = [
   { key: "keln", label: "ケルン用", id: 3 },
