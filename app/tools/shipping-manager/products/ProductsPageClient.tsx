@@ -12,7 +12,7 @@ import {
   type SheetKey,
   CATEGORY_LABELS,
   type CategorySlug,
-} from "@/features/products/constans";
+} from "@/features/products/constants";
 
 import type {
   SearchQuery,
