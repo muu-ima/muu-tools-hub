@@ -1,4 +1,4 @@
-// src/lib/wp.ts
+// app/lib/wp.ts
 /**
  * Typed WP fetch helper (no `any`)
  * - Returns `Response`

@@ -24,7 +24,6 @@ export function useProductForm({
 }: UseProductFormOptions) {
   const [submitting, setSubmitting] = useState(false);
   const [sheetKey, setSheetKey] = useState<SheetKey>(defaultSheetKey);
-  const sheetId = SHEETS.find((s) => s.key === sheetKey)!.id;
 
   const [form, setForm] = useState<FormState>(() => ({
     title: initial?.title ?? "",
@@ -78,6 +77,10 @@ export function useProductForm({
     setSubmitting(true);
 
     try {
+      // ★ ここで「いま選ばれている sheetKey から」毎回取り直す
+      const sheet = SHEETS.find((s) => s.key === sheetKey);
+      const sheetId = sheet ? sheet.id : SHEETS[0].id;
+
       const payload: SubmitPayload = {
         title: form.title.trim(),
         shipping_actual_yen: toNumOrNull(form.shipping_actual_yen),

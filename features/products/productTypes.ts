@@ -2,9 +2,9 @@
 import type { CategorySlug } from "@/features/products/constants";
 
 export const SHEETS = [
-  { key: "keln", label: "ケルン用", id: 3 },
-  { key: "cocconiel", label: "コッコニール用", id: 4 },
-  { key: "signpost", label: "サインポスト用", id: 5 },
+  { key: "keln", label: "ケルン用", id: 2 },
+  { key: "cocconiel", label: "コッコニール用", id: 3 },
+  { key: "signpost", label: "サインポスト用", id: 4 },
 ] as const;
 
 export type SheetKey = (typeof SHEETS)[number]["key"];

@@ -8,8 +8,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
-  SHEETS,
-  type SheetKey,
   CATEGORY_LABELS,
   type CategorySlug,
 } from "@/features/products/constants";
@@ -19,6 +17,9 @@ import type {
   SearchItem,
   SearchResponse,
 } from "@/features/products/types";
+
+import { SHEETS } from "@/features/products/productTypes"
+import type { SheetKey } from "@/features/products/productTypes";
 
 import { normalizeMeta, fmtNum, fmtTxt } from "@/features/products/utils";
 import { getProducts } from "@/features/products/api";
@@ -65,7 +66,7 @@ export default function ProductsPageClient() {
       setLoading(true);
       try {
         const apiParams = {
-          product_sheet: String(sheetDef.id),
+          sheet: sheetDef.key, 
           child_category: sp.child_category,
           id: sp.id,
           q: sp.q,
