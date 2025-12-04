@@ -33,7 +33,7 @@ export default function ToolsLayout({
 
         ${
           isShippingManager
-            ? "bg-neutral-100" // ← ★ 発送管理だけは背景画像なし・モノトーン
+            ? "bg-[url('/cocco-bg-11.png')]" //shipping-manager
             : isUS
             ? "bg-[url('/cocco-bg-10.png')]" // US
             : "bg-[url('/cocco-bg-4.png')]" // UK & その他
@@ -155,7 +155,6 @@ export default function ToolsLayout({
         )}
       </header>
 
-      {/* ▼ 各ページ本体 */}
       {/* ▼ 各ページ本体 */}
       <main
         className={`flex-1 py-2 md:py-4 ${
