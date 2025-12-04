@@ -64,6 +64,21 @@ app/
       views/
         NomalView.tsx
 
+    shipping-manager/
+      page.tsx
+      components/
+        DraggableScroll.tsx
+        LoadingOverlay.tsx
+        Modal.tsx
+        ProductForm.tsx
+        Sidebar.tsx
+        Tooltip.tsx
+      forms/
+        page.tsx
+        entry/
+          page.tsx
+        new/
+          page.tsx  
 components/
   ExchangeRateBar.tsx
   SiteFooter.tsx
@@ -77,6 +92,7 @@ lib/
   profitCalcUS.ts      // US 版コアロジック
   shipping.ts
   vatRule.ts
+  wp.ts
 
 types/
   profit.ts            // UK 版用型
@@ -191,6 +207,35 @@ app/tools/profit-calc-us/components/Result.tsx
 
 app/tools/profit-calc-us/components/FinalResultModal.tsx
 
+📦 Shipping Manager（海外発送管理ツール）
+
+海外配送商品の 重量・サイズ・配送方法・実送料 を統合管理するツールです。
+WordPress（Products CPT）と連携し、商品メタ情報の 検索・編集・登録・送料計算 を行えます。
+
+✨ 主な機能
+
+商品検索 / 絞り込み（カテゴリ・SKU・重量・サイズなど）
+
+商品メタ編集フォーム手前の認証画面付き
+
+商品メタ編集フォーム（重量 / サイズ / applied weight / 実送料）
+
+実重量 vs 容積重量を自動判定（shipping.ts と同期）
+
+REST API と同期（/wp-json/shipping/v1/search）
+
+モーダル UI・Skeleton・2 ペインレイアウト
+
+🔧 ロジック構成（概要）
+
+Features Layer：Products API（取得 / 更新）
+
+Logic Layer：重量計算・配送料ロジック（shipping.ts / weight.ts）
+
+UI Layer：一覧 / 詳細 / フォーム（Next.js クライアント）
+
+Shipping Manager は「商品データ管理 × 重量計算 × 配送料ロジック」を完全に分離した 3 レイヤー構造で、
+WordPress Products と Next.js UI をリアルタイム同期する発送管理システムです。
 
 ## 📦 セットアップ
 
