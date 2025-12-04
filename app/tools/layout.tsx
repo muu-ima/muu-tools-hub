@@ -156,8 +156,21 @@ export default function ToolsLayout({
       </header>
 
       {/* ▼ 各ページ本体 */}
-      <main className="flex-1 px-4 py-2 md:py-4">
-        <div className="mx-auto max-w-screen-2xl">{children}</div>
+      {/* ▼ 各ページ本体 */}
+      <main
+        className={`flex-1 py-2 md:py-4 ${
+          isShippingManager ? "px-0 md:px-2" : "px-4"
+        }`}
+      >
+        <div
+          className={
+            isShippingManager
+              ? "w-full" // ★ 発送管理だけは横幅フル
+              : "mx-auto max-w-screen-2xl" // 他のツールは今まで通り中央寄せ
+          }
+        >
+          {children}
+        </div>
       </main>
 
       {/* ▼ 右下のデコレーション（UK=猫 / US=犬） */}
