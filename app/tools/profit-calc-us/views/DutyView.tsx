@@ -1,4 +1,4 @@
-// app/tools/profit-calc-us/views/NomalView.tsx
+// app/tools/profit-calc-us/views/DutyView.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultM
 
 import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
 
-export default function NomalView() {
+export default function DutyView() {
   // ====== State ======
   const [rate, setRate] = useState<number | null>(null);
   const [costPrice, setCostPrice] = useState<number | "">("");
@@ -72,10 +72,10 @@ export default function NomalView() {
     >
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          ProfitCalc (US)
+          Duty (US)
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          仕入れ値・配送料・為替レートから利益率や詳細な数値を自動計算します
+          関税計算などを追加して詳細な数値を自動計算します
         </p>
       </div>
 
