@@ -13,10 +13,7 @@ import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcU
 import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
 import { useDutyUS } from "@/app/tools/profit-calc-us/hooks/useDutyUS";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ORIGIN_RATES_US,
-  HTS_RATES_US,
-} from "@/lib/profit-calc-us";
+import { ORIGIN_RATES_US, HTS_RATES_US } from "@/lib/profit-calc-us";
 
 export default function DutyView() {
   // ====== State ======
@@ -93,12 +90,12 @@ export default function DutyView() {
         ${isLoadingAll ? "blur-sm opacity-60" : "opacity-100 blur-0"}
       `}
     >
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Duty (US)
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-800">
+          US Duty Calculator
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          関税計算を含めて最終利益を確認するモードです
+        <p className="text-[13px] text-neutral-600 mt-1">
+          HTS・原産国・申告額・送料をもとに関税負担と最終利益を詳細に算出します
         </p>
       </div>
 
@@ -155,20 +152,12 @@ export default function DutyView() {
               placeholder="150"
               className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             />
-            <div className="mt-1 h-5 text-xs text-gray-500">
-              {rate !== null && sellingPrice !== "" && (
-                <p>
-                  概算円価格：約 {Math.round(parseFloat(sellingPrice) * rate)}{" "}
-                  円
-                </p>
-              )}
-            </div>
           </div>
 
           {/* 配送料モード */}
           <div className="mt-4">
             <div className="flex items-center justify-between">
-              <span className="block text-sm font-semibold text-neutral-800">
+              <span className="block text-sm font-semibold text-neutral-800 md:pb-5 pb-3.5">
                 配送料モード
               </span>
 

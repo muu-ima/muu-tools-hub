@@ -75,7 +75,7 @@ export default function NomalView() {
         ${isLoadingAll ? "blur-sm opacity-60" : "opacity-100 blur-0"}
       `}
     >
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           ProfitCalc (US)
         </h1>
@@ -138,15 +138,7 @@ export default function NomalView() {
               }}
               placeholder="150"
               className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
-            />
-            <div className="mt-1 h-5 text-xs text-gray-500">
-              {rate !== null && sellingPrice !== "" && (
-                <p>
-                  概算円価格：約 {Math.round(parseFloat(sellingPrice) * rate)}{" "}
-                  円
-                </p>
-              )}
-            </div>
+            />     
           </div>
 
           {/* 配送料モード */}
