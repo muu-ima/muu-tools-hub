@@ -1,16 +1,27 @@
 // app/tools/profit-calc-us/views/DutyView.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ExchangeRate from "@/app/tools/profit-calc-us/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-us/components/Result";
+import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
+import DutyResultCard from "@/app/tools/profit-calc-us/components/DutyResultCard";
+
 import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
 import { useCategoryFeeUS } from "@/app/tools/profit-calc-us/hooks/useCategoryFeeUS";
 import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcUS";
 
-import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
-
 import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
+
+import {
+  ORIGIN_RATES_US,
+  HTS_RATES_US,
+  findOriginByName,
+  findHtsByCode,
+  calculateDutyUS,
+  type DutyCalcResultUS,
+  type FinalWithDutyUS,
+} from "@/lib/profit-calc-us";
 
 export default function DutyView() {
   // ====== State ======
@@ -18,47 +29,122 @@ export default function DutyView() {
   const [costPrice, setCostPrice] = useState<number | "">("");
   const [sellingPrice, setSellingPrice] = useState<string>("");
 
+  const [selectedOrigin, setSelectedOrigin] = useState<string>("");
+  const [selectedHts, setSelectedHts] = useState<string>("");
+
   const [isOpen, setIsOpen] = useState(false);
 
-  // ====== タイマー（ローディング演出用） ======
+  // タイマー（ローディング演出）
   const timeoutReached = useTimeout(5000);
 
-  // ====== 配送（hook） ======
+  // 配送
   const {
     weight,
     setWeight,
     dimensions,
     setDimensions,
-    result,
+    result: shippingResult,
     isLoading: isShippingLoading,
   } = useShippingUS();
 
-  // ====== カテゴリ手数料（hook） ======
+  // カテゴリ手数料
   const { categoryOptions, selectedCategoryFee, setSelectedCategoryFee } =
     useCategoryFeeUS();
 
-  // 為替のログ（デバッグ用）
+  // 為替ログ
   useEffect(() => {
     if (rate !== null) {
       console.log(`最新為替レート：${rate}`);
     }
   }, [rate]);
 
-  // ====== 利益計算（hook） ======
+  // 利益計算（既存 US コア）
   const { calcResult, final, isEnabled } = useProfitCalcUS({
     sellingPrice,
     costPrice,
     rate,
-    result,
+    result: shippingResult,
     selectedCategoryFee,
   });
 
-  // 売値 + 州税（Result 用表示）
   const stateTaxRate = 0.0671;
   const sellingPriceNum = sellingPrice !== "" ? parseFloat(sellingPrice) : 0;
   const sellingPriceInclTax = sellingPriceNum + sellingPriceNum * stateTaxRate;
 
-  // ====== ローディング判定 ======
+  // 原産国 / HTS の選択データ
+  const origin = useMemo(
+    () => (selectedOrigin ? findOriginByName(selectedOrigin) ?? null : null),
+    [selectedOrigin]
+  );
+
+  const hts = useMemo(
+    () => (selectedHts ? findHtsByCode(selectedHts) ?? null : null),
+    [selectedHts]
+  );
+
+  // ====== 関税ブロック計算 ======
+  let dutyResult: DutyCalcResultUS | null = null;
+  let finalWithDuty: FinalWithDutyUS | null = null;
+  let declaredSummary: {
+    declaredShippingUsd: number;
+    chargedShippingUsd: number;
+    declaredValueUsd: number;
+    safetyMarkupUsd: number; // ← 送料の上乗せ担保額を追加
+    bandPolicyId?: number | null; // ← 使ってなければオプショナルでもOK
+  } | null = null;
+
+  if (
+    rate !== null &&
+    final &&
+    calcResult &&
+    origin &&
+    hts &&
+    sellingPriceNum > 0
+  ) {
+    // ================================
+    // 🚚 実際の送料JPYを使ってシートロジックを再現
+    //   domesticShippingJpy = calcResult.shippingJPY
+    // ================================
+    const duty = calculateDutyUS({
+      sellingUsd: sellingPriceNum,
+      domesticShippingJpy: calcResult.shippingJPY, // ★ ここが超重要
+      bankFx: rate,
+      originRate: origin.rate,
+      itemRate: hts.rate,
+    });
+
+    // DutyResultCard 用の申告サマリ
+    declaredSummary = {
+      declaredShippingUsd: duty.customsShippingUsd, // 申告上の送料USD
+      chargedShippingUsd: duty.customsShippingUsd, // 実請求送料も同じでOK
+      declaredValueUsd: duty.baseUsd, // 申告額（合計USD）
+      bandPolicyId: null, // 必要なら duty に足してもよい
+      safetyMarkupUsd: duty.shippingSafetyMarkupUsd,
+    };
+
+    const customsTotalJpy =
+      duty.customsFeeJpy + duty.mpfJpy + duty.disbursementJpy;
+
+    // 利益に関税を反映
+    finalWithDuty = {
+      baseProfitJPY: final.profitJPY,
+      customsFeeJpy: customsTotalJpy,
+      finalProfitJPY: final.profitJPY - customsTotalJpy,
+      profitDiffJPY: -customsTotalJpy,
+    };
+
+    dutyResult = duty;
+  }
+
+  const originLabel = origin
+    ? `${origin.name}（${Math.round(origin.rate * 100)}%）`
+    : undefined;
+
+  const htsLabel = hts
+    ? `${hts.code} ${hts.name}（${Math.round(hts.rate * 100)}%）`
+    : undefined;
+
+  // ローディング判定
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
 
@@ -75,14 +161,13 @@ export default function DutyView() {
           Duty (US)
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          関税計算などを追加して詳細な数値を自動計算します
+          関税計算を含めて最終利益を確認するモードです
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
-        {/* 左カラム */}
+        {/* 左カラム：入力 */}
         <div className="flex-1 flex flex-col space-y-4">
-          {/* 為替レート */}
           <ExchangeRate onRateChange={setRate} />
 
           {/* 仕入れ値 */}
@@ -120,7 +205,6 @@ export default function DutyView() {
                   setSellingPrice("");
                   return;
                 }
-                // 数字 + 小数点2桁まで
                 if (/^\d*\.?\d{0,2}$/.test(raw)) {
                   setSellingPrice(raw);
                 }
@@ -154,7 +238,7 @@ export default function DutyView() {
                 setWeight(e.target.value === "" ? null : Number(e.target.value))
               }
               placeholder="3000"
-              className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md"
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             />
           </div>
 
@@ -171,7 +255,7 @@ export default function DutyView() {
                   setDimensions((prev) => ({ ...prev, length: num }));
                 }}
                 placeholder="長さ"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
+                className="px-2 py-1 bg-white border-neutral-300 rounded-md"
               />
               <input
                 type="number"
@@ -182,7 +266,7 @@ export default function DutyView() {
                   setDimensions((prev) => ({ ...prev, width: num }));
                 }}
                 placeholder="幅"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
+                className="px-2 py-1 bg-white border-neutral-300 rounded-md"
               />
               <input
                 type="number"
@@ -193,7 +277,7 @@ export default function DutyView() {
                   setDimensions((prev) => ({ ...prev, height: num }));
                 }}
                 placeholder="高さ"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
+                className="px-2 py-1 bg-white border-neutral-300 rounded-md"
               />
             </div>
           </div>
@@ -204,7 +288,7 @@ export default function DutyView() {
             <select
               value={selectedCategoryFee}
               onChange={(e) => setSelectedCategoryFee(Number(e.target.value))}
-              className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md"
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             >
               <option value="">カテゴリを選択してください</option>
               {categoryOptions.map((cat) => (
@@ -214,9 +298,45 @@ export default function DutyView() {
               ))}
             </select>
           </div>
+
+          {/* 原産国 */}
+          <div>
+            <label className="block font-semibold mb-1">原産国 (Country)</label>
+            <select
+              value={selectedOrigin}
+              onChange={(e) => setSelectedOrigin(e.target.value)}
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
+            >
+              <option value="">原産国を選択</option>
+              {ORIGIN_RATES_US.map((o) => (
+                <option key={o.name} value={o.name}>
+                  {o.name}（{Math.round(o.rate * 100)}%）
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* HTS コード */}
+          <div>
+            <label className="block font-semibold mb-1">
+              HTSコード（品目）
+            </label>
+            <select
+              value={selectedHts}
+              onChange={(e) => setSelectedHts(e.target.value)}
+              className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
+            >
+              <option value="">HTSコードを選択</option>
+              {HTS_RATES_US.map((h) => (
+                <option key={h.code} value={h.code}>
+                  {h.code}（{Math.round(h.rate * 100)}%）
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* 右カラム */}
+        {/* 右カラム：結果 */}
         <div className="flex-1 flex flex-col space-y-4">
           {/* 配送結果 */}
           <div className="w-full px-4 py-4 bg-white border border-neutral-300 rounded-lg shadow-sm">
@@ -225,7 +345,7 @@ export default function DutyView() {
                 <p className="text-sm text-neutral-700">配送方法: 計算中...</p>
                 <p className="text-sm text-neutral-700">配送料: 計算中...</p>
               </>
-            ) : result === null ? (
+            ) : shippingResult === null ? (
               <>
                 <p className="text-sm text-neutral-700">配送方法: 未計算</p>
                 <p className="text-sm text-neutral-700">配送料: 未計算</p>
@@ -233,16 +353,16 @@ export default function DutyView() {
             ) : (
               <>
                 <p className="text-sm text-neutral-700">
-                  配送方法: {result.method}
+                  配送方法: {shippingResult.method}
                 </p>
                 <p className="text-sm text-neutral-700">
-                  配送料: {result.price}円
+                  配送料: {shippingResult.price}円
                 </p>
               </>
             )}
           </div>
 
-          {/* 利益結果 */}
+          {/* 既存の利益結果 */}
           {rate !== null && sellingPrice !== "" && (
             <Result
               originalPriceUSD={
@@ -253,6 +373,23 @@ export default function DutyView() {
               exchangeRateUSDtoJPY={rate ?? 0}
               calcResult={calcResult}
             />
+          )}
+
+          {/* 関税カード */}
+          <DutyResultCard
+            duty={dutyResult}
+            finalWithDuty={finalWithDuty}
+            originLabel={originLabel}
+            htsLabel={htsLabel}
+            exchangeRateUSDtoJPY={rate ?? 0}
+            declaredSummary={declaredSummary}
+          />
+
+          {declaredSummary && (
+            <p className="text-sm bg-white-50 text-neutral-700">
+              送料の上乗せ担保額：+{declaredSummary.safetyMarkupUsd.toFixed(2)}{" "}
+              USD
+            </p>
           )}
 
           {/* モーダルボタン */}
@@ -273,7 +410,7 @@ export default function DutyView() {
             <FinalResultModal
               isOpen={isOpen}
               onClose={() => setIsOpen(false)}
-              shippingMethod={result?.method || ""}
+              shippingMethod={shippingResult?.method || ""}
               shippingJPY={calcResult?.shippingJPY || 0}
               data={final}
               exchangeRateUSDtoJPY={rate ?? 0}

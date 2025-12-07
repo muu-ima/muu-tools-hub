@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import NormalView from "@/app/tools/profit-calc-uk/views/NomalView";
+import NormalView from "@/app/tools/profit-calc-uk/views/NormalView";
 import PlatformView from "@/app/tools/profit-calc-uk/views/PlatformView";
 import ReverseView from "@/app/tools/profit-calc-uk/views/ReverseView"
 import ModeSwitcherFab from "@/app/tools/profit-calc-uk/components/ModeSweitcherFab";

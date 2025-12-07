@@ -6,6 +6,11 @@ import type { HtsItem } from "./types";
 const HTS_ITEMS = htsData as HtsItem[];
 
 /**
+ * US版で DutyView から参照するためのそのままの一覧
+ */
+export const HTS_RATES_US: HtsItem[] = HTS_ITEMS;
+
+/**
  * HTS 一覧（セレクト表示用）
  */
 export function listHtsOptions(): HtsItem[] {
@@ -13,7 +18,14 @@ export function listHtsOptions(): HtsItem[] {
 }
 
 /**
- * コードから HTS レートを取得（なければ null）
+ * コードから HTS 項目を取得（DutyView 用）
+ */
+export function findHtsByCode(code: string): HtsItem | undefined {
+  return HTS_ITEMS.find((item) => item.code === code);
+}
+
+/**
+ * コードから HTS レートだけ取得（既存）
  */
 export function getHtsRateByCode(code: string): number | null {
   const hit = HTS_ITEMS.find((item) => item.code === code);
@@ -21,7 +33,7 @@ export function getHtsRateByCode(code: string): number | null {
 }
 
 /**
- * name（SSD / タオル…）から HTS 項目を取得
+ * 名前（SSD / タオル…）から HTS 項目を取得
  */
 export function getHtsByName(name: string): HtsItem | null {
   const hit = HTS_ITEMS.find(

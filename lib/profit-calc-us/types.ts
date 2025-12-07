@@ -36,7 +36,6 @@ export type DutyCalcParamsUS = {
   bankFx: number;
   originRate: number;
   itemRate: number;
-  declaredValueUsd: number;
 };
 
 // 関税計算の結果
@@ -47,6 +46,9 @@ export type DutyCalcResultUS = {
   disbursementJpy: number;
   mpfJpy: number;
   customsFeeJpy: number;
+  shippingSafetyMarkupUsd: number; // 送料の上乗せ担保額（Shipping Policy バンド）
+  declaredSeparateUsd: number;     // 送料別の申告額（J15 相当）
+  declaredTotalUsd: number;        // 合計申告額（J16 相当）
 };
 
 // 関税込み最終利益
