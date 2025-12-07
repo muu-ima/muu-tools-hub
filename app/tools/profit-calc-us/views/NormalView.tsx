@@ -7,7 +7,7 @@ import Result from "@/app/tools/profit-calc-us/components/Result";
 import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
 import { useCategoryFeeUS } from "@/app/tools/profit-calc-us/hooks/useCategoryFeeUS";
 import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcUS";
-
+import { motion, AnimatePresence } from "framer-motion";
 import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
 
 import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
@@ -29,8 +29,13 @@ export default function NomalView() {
     setWeight,
     dimensions,
     setDimensions,
-    result,
-    isLoading: isShippingLoading,
+    shippingMode,
+    setShippingMode,
+    manualShipping,
+    setManualShipping,
+    result: shippingResult,
+    selectedShippingJPY,
+    shippingMethodLabel,
   } = useShippingUS();
 
   // ====== カテゴリ手数料（hook） ======
@@ -49,7 +54,7 @@ export default function NomalView() {
     sellingPrice,
     costPrice,
     rate,
-    result,
+    result: shippingResult,
     selectedCategoryFee,
   });
 
@@ -144,58 +149,164 @@ export default function NomalView() {
             </div>
           </div>
 
-          {/* 実重量 */}
-          <div>
-            <label className="block font-semibold mb-1">実重量 (g)</label>
-            <input
-              type="number"
-              value={weight ?? ""}
-              onChange={(e) =>
-                setWeight(e.target.value === "" ? null : Number(e.target.value))
-              }
-              placeholder="3000"
-              className="w-full px-3 py-2  bg-white border-neutral-300 rounded-md"
-            />
-          </div>
+          {/* 配送料モード */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-neutral-800 leading-none md:pb-5 pb-3">
+                配送料モード
+              </span>
 
-          {/* サイズ */}
-          <div>
-            <label className="block font-semibold mb-1">サイズ (cm)</label>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="number"
-                value={dimensions.length || ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const num = raw === "" ? 0 : Math.max(0, Number(raw));
-                  setDimensions((prev) => ({ ...prev, length: num }));
-                }}
-                placeholder="長さ"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
-              />
-              <input
-                type="number"
-                value={dimensions.width || ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const num = raw === "" ? 0 : Math.max(0, Number(raw));
-                  setDimensions((prev) => ({ ...prev, width: num }));
-                }}
-                placeholder="幅"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
-              />
-              <input
-                type="number"
-                value={dimensions.height || ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const num = raw === "" ? 0 : Math.max(0, Number(raw));
-                  setDimensions((prev) => ({ ...prev, height: num }));
-                }}
-                placeholder="高さ"
-                className="px-2 py-1  bg-white border-neutral-300 rounded-md"
-              />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={shippingMode === "manual"}
+                onClick={() =>
+                  setShippingMode((m) => (m === "auto" ? "manual" : "auto"))
+                }
+                className="relative inline-flex items-center h-9 w-36 rounded-full bg-neutral-200 transition"
+              >
+                <span
+                  className={`w-1/2 text-center text-sm ${
+                    shippingMode === "auto"
+                      ? "font-semibold text-neutral-900"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  自動
+                </span>
+                <span
+                  className={`w-1/2 text-center text-sm ${
+                    shippingMode === "manual"
+                      ? "font-semibold text-neutral-900"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  手動
+                </span>
+
+                <motion.span
+                  layout
+                  className="absolute h-7 w-7 rounded-full bg-white shadow"
+                  style={{ top: 4, left: 4 }}
+                  animate={{ x: shippingMode === "manual" ? 96 : 0 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                />
+              </button>
             </div>
+
+            {/* 自動・手動切り替えフォーム */}
+            <motion.div
+              layout
+              className="mt-1 rounded-lg"
+              transition={{ type: "spring", stiffness: 220, damping: 26 }}
+            >
+              {isLoadingAll ? (
+                <div className="h-36 w-full rounded-lg bg-neutral-200 animate-pulse" />
+              ) : (
+                shippingMode && (
+                  <AnimatePresence mode="wait" initial={false}>
+                    {shippingMode === "auto" ? (
+                      <motion.fieldset
+                        key="auto"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className="space-y-3"
+                      >
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                            実重量 (g)
+                          </label>
+                          <input
+                            type="number"
+                            value={weight ?? ""}
+                            onChange={(e) =>
+                              setWeight(
+                                e.target.value === ""
+                                  ? null
+                                  : Number(e.target.value)
+                              )
+                            }
+                            className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                            サイズ (cm)
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <input
+                              type="number"
+                              value={dimensions.length || ""}
+                              onChange={(e) =>
+                                setDimensions((prev) => ({
+                                  ...prev,
+                                  length: Number(e.target.value) || 0,
+                                }))
+                              }
+                              placeholder="長さ"
+                              className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                            />
+                            <input
+                              type="number"
+                              value={dimensions.width || ""}
+                              onChange={(e) =>
+                                setDimensions((prev) => ({
+                                  ...prev,
+                                  width: Number(e.target.value) || 0,
+                                }))
+                              }
+                              placeholder="幅"
+                              className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                            />
+                            <input
+                              type="number"
+                              value={dimensions.height || ""}
+                              onChange={(e) =>
+                                setDimensions((prev) => ({
+                                  ...prev,
+                                  height: Number(e.target.value) || 0,
+                                }))
+                              }
+                              placeholder="高さ"
+                              className="px-2 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                            />
+                          </div>
+                        </div>
+                      </motion.fieldset>
+                    ) : (
+                      <motion.div
+                        key="manual"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                      >
+                        <label className="block text-sm font-semibold text-neutral-800 mb-1">
+                          配送料（円・手動）
+                        </label>
+                        <input
+                          type="number"
+                          value={manualShipping}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") return setManualShipping("");
+                            const num = Math.max(0, Number(raw));
+                            setManualShipping(num);
+                          }}
+                          className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
+                        />
+                        <p className="text-xs text-neutral-500 mt-1">
+                          ※ 手動入力時は重量/サイズは非表示になります
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )
+              )}
+            </motion.div>
           </div>
 
           {/* カテゴリ手数料 */}
@@ -219,27 +330,14 @@ export default function NomalView() {
         {/* 右カラム */}
         <div className="flex-1 flex flex-col space-y-4">
           {/* 配送結果 */}
-          <div className="w-full px-4 py-4 bg-white border border-neutral-300 rounded-lg shadow-sm">
-            {isShippingLoading ? (
-              <>
-                <p className="text-sm text-neutral-700">配送方法: 計算中...</p>
-                <p className="text-sm text-neutral-700">配送料: 計算中...</p>
-              </>
-            ) : result === null ? (
-              <>
-                <p className="text-sm text-neutral-700">配送方法: 未計算</p>
-                <p className="text-sm text-neutral-700">配送料: 未計算</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-neutral-700">
-                  配送方法: {result.method}
-                </p>
-                <p className="text-sm text-neutral-700">
-                  配送料: {result.price}円
-                </p>
-              </>
-            )}
+          <div className="p-4 border border-neutral-300 rounded-lg bg-white shadow-sm">
+            <p className="text-sm">配送方法: {shippingMethodLabel}</p>
+            <p className="text-sm">
+              配送料:{" "}
+              {selectedShippingJPY !== null
+                ? `${selectedShippingJPY}円`
+                : "未計算"}
+            </p>
           </div>
 
           {/* 利益結果 */}
@@ -273,8 +371,8 @@ export default function NomalView() {
             <FinalResultModal
               isOpen={isOpen}
               onClose={() => setIsOpen(false)}
-              shippingMethod={result?.method || ""}
-              shippingJPY={calcResult?.shippingJPY || 0}
+              shippingMethod={shippingResult?.method || ""}
+              shippingJPY={selectedShippingJPY ?? 0}
               data={final}
               exchangeRateUSDtoJPY={rate ?? 0}
             />
