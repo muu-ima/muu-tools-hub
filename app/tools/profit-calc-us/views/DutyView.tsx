@@ -93,30 +93,49 @@ export default function DutyView() {
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
 
-  // DutyView.tsx 内、policySummary を作るところ
-
+  const STATE_TAX_RATE_US = 0.0671; // 6.71% の平均州税
+  const toUsd = (v: number) => Number(v.toFixed(2));
   const policySummary =
     dutyResult && declaredSummary && calcResult && finalWithDuty
-      ? {
-          // ★ J19: 最終の販売額 (USD)
-          sellingUsd:
-            sellingPriceNum -
-            (dutyResult.shippingSafetyMarkupUsd - dutyResult.dutyUsd),
+      ? (() => {
+          // スプレッドシートの記号に対応させる
+          const I8 = sellingPriceNum; // 売値 USD
+          const M15 = dutyResult.shippingSafetyMarkupUsd; // 設定ポリシー USD
+          const J17 = dutyResult.dutyUsd; // 関税額 USD
 
-          // M15: 設定ポリシー（バンド値）
-          policyAmountUsd: dutyResult.shippingSafetyMarkupUsd,
+          // J18 = M15 - J17
+          const J18 = toUsd(M15 - J17);
 
-          // 利益率: 最終利益 ÷ 州税抜き売上(JPY) ×100
-          profitMarginPercent:
-            (finalWithDuty.finalProfitJPY / (calcResult.sellingPriceJPY || 1)) *
-            100,
+          // J19 = I8 - J18
+          const J19 = toUsd(I8 - J18);
 
-          // U8: 購入金額 = 申告価格合計(J16) + 設定ポリシー(M15)
-          purchaseAmountUsd:
-            declaredSummary.declaredValueUsd +
-            dutyResult.shippingSafetyMarkupUsd,
-        }
+          // J20 = J19 * 州税率(6.71%)
+          const J20 = toUsd(J19 * STATE_TAX_RATE_US);
+
+          // R8 = J19 - J20  … 販売額
+          const R8 = toUsd(J19 - J20);
+
+          // U8 = R8 + M15 - J20 … 購入金額
+          const U8 = toUsd(R8 + M15 - J20);
+
+          return {
+            // ★ ここがスプシの「販売額 89」「購入金額 113」に対応
+            sellingUsd: R8,
+            policyAmountUsd: M15,
+            profitMarginPercent:
+              (finalWithDuty.finalProfitJPY /
+                (calcResult.sellingPriceJPY || 1)) *
+              100,
+            purchaseAmountUsd: U8,
+          };
+        })()
       : null;
+
+  console.log("DutyView rate check", {
+    calcResult,
+    declaredSummary,
+    dutyResult,
+  });
 
   // ====== UI ======
   return (
