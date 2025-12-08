@@ -93,16 +93,28 @@ export default function DutyView() {
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
 
+  // DutyView.tsx 内、policySummary を作るところ
+
   const policySummary =
     dutyResult && declaredSummary && calcResult && finalWithDuty
       ? {
-          sellingUsd: sellingPriceNum,
-          // ここを index ではなく「80 とか 55 とかのバンド値」にする
+          // ★ J19: 最終の販売額 (USD)
+          sellingUsd:
+            sellingPriceNum -
+            (dutyResult.shippingSafetyMarkupUsd - dutyResult.dutyUsd),
+
+          // M15: 設定ポリシー（バンド値）
           policyAmountUsd: dutyResult.shippingSafetyMarkupUsd,
+
+          // 利益率: 最終利益 ÷ 州税抜き売上(JPY) ×100
           profitMarginPercent:
             (finalWithDuty.finalProfitJPY / (calcResult.sellingPriceJPY || 1)) *
             100,
-          purchaseAmountUsd: declaredSummary.declaredValueUsd,
+
+          // U8: 購入金額 = 申告価格合計(J16) + 設定ポリシー(M15)
+          purchaseAmountUsd:
+            declaredSummary.declaredValueUsd +
+            dutyResult.shippingSafetyMarkupUsd,
         }
       : null;
 
