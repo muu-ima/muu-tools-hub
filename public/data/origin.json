@@ -1,0 +1,11 @@
+[
+  { "name": "China", "rate": 0.30 },
+  { "name": "Vietnam", "rate": 0.20 },
+  { "name": "Malaysia", "rate": 0.19 },
+  { "name": "Thailand", "rate": 0.19 },
+  { "name": "Germany", "rate": 0.15 },
+  { "name": "India", "rate": 0.25 },
+  { "name": "United States of America", "rate": 0.00 },
+  { "name": "Switzerland", "rate": 0.39 },
+  { "name": "EU", "rate": 0.15 }
+]

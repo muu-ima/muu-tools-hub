@@ -177,7 +177,7 @@ export default function ReverseView() {
     `}
     >
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-5">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           <span className="bg-linear-to-r from-blue-400/60 to-blue-600/40 bg-clip-text text-transparent">
             ProfitCalc (UK) – 逆算モード

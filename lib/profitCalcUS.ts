@@ -126,14 +126,7 @@ export function calculateCategoryFeeUS(
   return sellingPrice * (categoryFeePercent / 100);
 }
 
-/**
- * 配送料（USD）をJPYに換算する
- */
-export function convertShippingPriceToJPY(
-  shippingPriceUSD: number,
-  exchangeRateUSDtoJPY: number): number {
-  return shippingPriceUSD * exchangeRateUSDtoJPY;
-}
+
 
 /**
  * 実費合計を計算する
