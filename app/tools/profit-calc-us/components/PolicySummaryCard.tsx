@@ -18,7 +18,7 @@ export default function PolicySummaryCard({ summary }: Props) {
   } = summary;
 
   return (
-    <div className="rounded-2xl bg-white shadow p-6 border border-neutral-200">
+    <div className="rounded-2xl bg-white shadow p-5 border border-neutral-200">
       <h2 className="text-lg font-bold mb-4">販売・ポリシー概要（US）</h2>
 
       <div className="space-y-3">

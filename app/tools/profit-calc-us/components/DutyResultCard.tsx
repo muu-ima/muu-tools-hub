@@ -1,7 +1,6 @@
 // app/tools/profit-calc-us/components/DutyResultCard.tsx
 "use client";
 
-import React from "react";
 import type {
   DutyCalcResultUS,
   FinalWithDutyUS,
@@ -65,7 +64,7 @@ export default function DutyResultCard({
   const { baseProfitJPY, finalProfitJPY, profitDiffJPY } = finalWithDuty;
 
   return (
-    <div className="mt-6 w-full px-4 py-5 bg-white border border-neutral-300 rounded-xl shadow-sm space-y-4">
+    <div className="mt3 w-full px-4 py-5 bg-white border border-neutral-300 rounded-xl shadow-sm space-y-4">
       <h2 className="text-lg font-semibold text-neutral-800">
         関税計算 (Duty / US)
       </h2>

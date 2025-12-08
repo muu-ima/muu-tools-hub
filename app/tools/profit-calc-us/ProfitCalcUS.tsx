@@ -1,14 +1,36 @@
+// app/tools/profit-calc-us/ProfitCalcUS.tsx
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import NormalView from "@/app/tools/profit-calc-us/views/NormalView";
 import DutyView from "@/app/tools/profit-calc-us/views/DutyView";
-import ModeSwitcherFab from "@/app/tools/profit-calc-us/components/ModeSwitcherUS";
+import ModeSwitcherUS from "@/app/tools/profit-calc-us/components/ModeSwitcherUS";
 
 type ToolModeUS = "normal" | "duty";
 
-export default function ProfitCalcUS() {
-  const [mode, setMode] = useState<ToolModeUS>("normal");
+type ProfitCalcUSProps = {
+  initialMode?: ToolModeUS;
+};
+
+export default function ProfitCalcUS({ initialMode = "normal" }: ProfitCalcUSProps) {
+  const [mode, setMode] = useState<ToolModeUS>(initialMode);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleSelect = (next: ToolModeUS) => {
+    setMode(next);
+
+    // 既存のクエリパラメータを維持しつつ mode だけ更新
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.set("mode", next);
+
+    router.replace(`${pathname}?${sp.toString()}`, {
+      scroll: false, // スクロール位置はそのまま
+    });
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -17,14 +39,7 @@ export default function ProfitCalcUS() {
       {mode === "duty" && <DutyView />}
 
       {/* ▼ 右下のモードチェンジャー */}
-      <ModeSwitcherFab
-        onSelect={(m) => {
-          // 既存の ModeSwitcherFab は normal / reverse / platform を返す
-          // US 用にマッピングする
-          if (m === "normal") setMode("normal");
-          if (m === "duty") setMode("duty"); // duty に割り当てる（仮）
-        }}
-      />
+      <ModeSwitcherUS onSelect={handleSelect} />
     </div>
   );
 }
