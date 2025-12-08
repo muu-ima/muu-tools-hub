@@ -13,12 +13,12 @@ function pickShippingPolicyBand(k12: number): number {
   const lessOrEqual = bands.filter((b) => b <= k12);
 
   const m18 = greaterOrEqual.length > 0 ? Math.min(...greaterOrEqual) : 110; // M18
-  const m19 = lessOrEqual.length > 0 ? Math.max(...lessOrEqual) : 80;       // M19
+  const m19 = lessOrEqual.length > 0 ? Math.max(...lessOrEqual) : 80; // M19
 
-  const n18 = m18 - k12;                 // N18
-  const n19 = m19 - k12;                 // N19
-  const o19 = Math.abs(n19);             // O19
-  const o18 = Math.min(n18, o19);        // O18
+  const n18 = m18 - k12; // N18
+  const n19 = m19 - k12; // N19
+  const o19 = Math.abs(n19); // O19
+  const o18 = Math.min(n18, o19); // O18
 
   // IF(O18=O19,M19,M18)
   return o18 === o19 ? m19 : m18;
@@ -28,60 +28,61 @@ function pickShippingPolicyBand(k12: number): number {
  * スプレッドシート右側「関税計算」をまる写し版
  */
 export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
-  const {
-    sellingUsd,           // I8
-    domesticShippingJpy,  // J8
-    bankFx,               // W10
-    originRate,           // I11
-    itemRate,             // K11
-  } = params;
+  const { sellingUsd, domesticShippingJpy, bankFx, originRate, itemRate } =
+    params;
 
   if (!bankFx) {
     throw new Error("bankFx が 0 です");
   }
 
-  // ===== V22: 実送料USD =====
-  const shippingUsd = domesticShippingJpy / bankFx;
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[DutyUS] inputs", {
+      "I8 sellingUsd": sellingUsd,
+      "J8 domesticShippingJpy": domesticShippingJpy,
+      "W10 bankFx": bankFx,
+      "I11 originRate": originRate,
+      "K11 itemRate": itemRate,
+    });
+  }
 
-  // ===== W22: base（売値 + 送料）=====
-  const baseForPercentUsd = sellingUsd + shippingUsd;
+  const shippingUsd = domesticShippingJpy / bankFx; // V22
+  const baseForPercentUsd = sellingUsd + shippingUsd; // W22
+  const dutyRate = originRate + itemRate; // I11+K11
+  const provisionalDutyUsd = baseForPercentUsd * dutyRate; // K12
 
-  // ===== K12: 仮の関税額（Policy 判定用）=====
-  const dutyRate = originRate + itemRate; // I11 + K11
-  const provisionalDutyUsd = baseForPercentUsd * dutyRate;
+  const shippingSafetyMarkupUsd = pickShippingPolicyBand(provisionalDutyUsd); // M15
 
-  // ===== M15: Shipping Policy バンド選択 =====
-  const shippingSafetyMarkupUsd = pickShippingPolicyBand(provisionalDutyUsd);
-
-  // ===== J15 / J16: 送料別・合計 申告額 =====
   const declaredSeparateUsd = sellingUsd - shippingSafetyMarkupUsd; // J15
-  const declaredTotalUsd = declaredSeparateUsd + shippingUsd;     // J16
+  const declaredTotalUsd = declaredSeparateUsd + shippingUsd; // J16
+  const dutyUsd = +(declaredTotalUsd * dutyRate).toFixed(2); // J17
 
-  // ===== J17: 関税（USD）=====
-  const dutyUsd = +(declaredTotalUsd * dutyRate).toFixed(2);
-
-  // ===== 関税JPY（Y26*W10 相当）=====
   const customsFeeJpy = Math.round(dutyUsd * bankFx);
-
-  // ===== MPF: 2.62 USD 固定（W26, W27）=====
   const MPF_USD = 2.62;
   const mpfJpy = Math.round(MPF_USD * bankFx);
 
-  // ===== Disbursement: V26 / V27 / V28 =====
-  const flatDisbJpy = 4.5 * bankFx;                         // V26
+  const flatDisbJpy = 4.5 * bankFx; // V26
   const percentDisbJpy = baseForPercentUsd * 0.02 * bankFx; // V27
-  const disbursementJpy = Math.round(
-    Math.max(flatDisbJpy, percentDisbJpy)
-  ); // V28
+  const disbursementJpy = Math.round(Math.max(flatDisbJpy, percentDisbJpy)); // V28
 
-  console.log("shippingUsd", shippingUsd);             // ≒ 6.24
-  console.log("declaredSeparateUsd", declaredSeparateUsd); // 20
-  console.log("declaredTotalUsd", declaredTotalUsd);       // ≒ 26.24
-    console.log("shippingSafetyMarkupUsd", shippingSafetyMarkupUsd);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[DutyUS] steps", {
+      "V22 shippingUsd": shippingUsd,
+      "W22 baseForPercentUsd": baseForPercentUsd,
+      "K12 provisionalDutyUsd": provisionalDutyUsd,
+      "M15 shippingSafetyMarkupUsd": shippingSafetyMarkupUsd,
+      "J15 declaredSeparateUsd": declaredSeparateUsd,
+      "J16 declaredTotalUsd": declaredTotalUsd,
+      "J17 dutyUsd": dutyUsd,
+      "customsFeeJpy (Y26*W10)": customsFeeJpy,
+      "V26 flatDisbJpy": flatDisbJpy,
+      "V27 percentDisbJpy": percentDisbJpy,
+      "V28 disbursementJpy": disbursementJpy,
+    });
+  }
 
   return {
-    customsShippingUsd: shippingUsd,   // 実送料USD
-    baseUsd: declaredTotalUsd,         // 申告額（合計）
+    customsShippingUsd: shippingUsd,
+    baseUsd: declaredTotalUsd,
     dutyUsd,
     disbursementJpy,
     mpfJpy,

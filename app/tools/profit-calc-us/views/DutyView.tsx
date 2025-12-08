@@ -78,6 +78,17 @@ export default function DutyView() {
       finalProfit: final?.profitJPY ?? null,
     });
 
+  function formatRate(rate: number): string {
+    return (rate * 100).toFixed(2); // 小数2桁
+  }
+
+  // "4202.92.1000" → "4202.92" にする表示用フォーマット
+  function formatHtsCodeShort(code: string): string {
+    const parts = code.split(".");
+    if (parts.length <= 2) return code; // もともと短いコードはそのまま
+    return `${parts[0]}.${parts[1]}`;
+  }
+
   // ローディング判定
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
@@ -359,11 +370,15 @@ export default function DutyView() {
               className="w-full px-3 py-2 bg-white border-neutral-300 rounded-md"
             >
               <option value="">HTSコードを選択</option>
-              {HTS_RATES_US.map((h) => (
-                <option key={h.code} value={h.code}>
-                  {h.code}（{Math.round(h.rate * 100)}%）
-                </option>
-              ))}
+              {HTS_RATES_US.map((h) => {
+                const shortCode = formatHtsCodeShort(h.code);
+
+                return (
+                  <option key={h.code} value={h.code}>
+                    {h.name}（{shortCode} / {formatRate(h.rate)}%）
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
