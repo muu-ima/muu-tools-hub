@@ -434,13 +434,6 @@ export default function DutyView() {
             declaredSummary={declaredSummary}
           />
 
-          {declaredSummary && (
-            <p className="text-base font-bold bg-gray-200 p-4 rounded-2xl text-neutral-700">
-              送料の上乗せ担保額：+{declaredSummary.safetyMarkupUsd.toFixed(2)}{" "}
-              USD
-            </p>
-          )}
-
           {/* モーダルボタン */}
           <button
             onClick={() => setIsOpen(true)}
