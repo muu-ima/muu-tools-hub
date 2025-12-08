@@ -10,21 +10,20 @@ import {
 } from "@/lib/profit-calc-us";
 
 export type DutySummary = {
-  declaredShippingUsd: number;
-  chargedShippingUsd: number;
-  declaredValueUsd: number;
-  safetyMarkupUsd: number;
-  bandPolicyId?: number | null;
+  declaredShippingUsd: number;  // 関税用の送料（USD）
+  chargedShippingUsd: number;   // 課金される送料（今は同じ値でOK）
+  declaredValueUsd: number;     // 申告価格 合計（J16相当）→「購入金額」に使える
+  safetyMarkupUsd: number;      // Shipping Policy の上乗せ額（M15）
+  bandPolicyId: number | null;  // Shipping Policy のID（0〜…）
 };
 
 type Params = {
   rate: number | null;
-  sellingPriceNum: number;
+  sellingPriceNum: number; // 売値USD
   calcResult: { shippingJPY: number; sellingPriceJPY: number } | null;
   originName: string;
   htsCode: string;
-  finalProfit: number | null;
-  originRateFallback?: number;
+  finalProfit: number | null; // 関税前 最終利益 (JPY)
 };
 
 export function useDutyUS(params: Params) {
@@ -81,9 +80,9 @@ export function useDutyUS(params: Params) {
     const summary: DutySummary = {
       declaredShippingUsd: duty.customsShippingUsd,
       chargedShippingUsd: duty.customsShippingUsd,
-      declaredValueUsd: duty.baseUsd,
+      declaredValueUsd: duty.declaredTotalUsd,
       safetyMarkupUsd: duty.shippingSafetyMarkupUsd,
-      bandPolicyId: null,
+      bandPolicyId: duty.policyId ?? null,
     };
 
     const finalDuty: FinalWithDutyUS = {

@@ -49,6 +49,7 @@ export type DutyCalcResultUS = {
   shippingSafetyMarkupUsd: number; // 送料の上乗せ担保額（Shipping Policy バンド）
   declaredSeparateUsd: number;     // 送料別の申告額（J15 相当）
   declaredTotalUsd: number;        // 合計申告額（J16 相当）
+  policyId: number | null; 
 };
 
 // 関税込み最終利益
@@ -57,4 +58,11 @@ export type FinalWithDutyUS = {
   customsFeeJpy: number;
   finalProfitJPY: number;
   profitDiffJPY: number;
+};
+
+export type PolicySummaryUS = {
+  sellingUsd: number;      // 販売額
+  policyId: number | null; // 設定ポリシー（見つからなければ null）
+  profitMarginPercent: number; // 利益率 %
+  purchaseAmountUsd: number;   // 購入金額（USD）
 };

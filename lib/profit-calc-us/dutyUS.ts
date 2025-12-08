@@ -3,6 +3,10 @@ import type { DutyCalcParamsUS, DutyCalcResultUS } from "./types";
 // Q14:Q20 の Shipping Policy バンド（シートと同じ）
 const SHIPPING_POLICY_BANDS_USD = [7, 15, 30, 55, 80, 110, 180] as const;
 
+// 小さなユーティリティ（USDは小数2桁、JPYは整数）
+const usd = (v: number) => Number(v.toFixed(2));
+const jpy0 = (v: number) => Math.round(v);
+
 /**
  * K12（仮の関税額）から、シートと同じルールで M15 を決める
  */
@@ -25,7 +29,7 @@ function pickShippingPolicyBand(k12: number): number {
 }
 
 /**
- * スプレッドシート右側「関税計算」をまる写し版
+ * スプレッドシート右側「関税計算」をまる写し版（丸め位置も合わせる）
  */
 export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
   const { sellingUsd, domesticShippingJpy, bankFx, originRate, itemRate } =
@@ -45,24 +49,45 @@ export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
     });
   }
 
-  const shippingUsd = domesticShippingJpy / bankFx; // V22
-  const baseForPercentUsd = sellingUsd + shippingUsd; // W22
-  const dutyRate = originRate + itemRate; // I11+K11
-  const provisionalDutyUsd = baseForPercentUsd * dutyRate; // K12
+  // --- V22: 送料USD（シートでは 2 桁で丸めてから後続計算に使う）---
+  const shippingUsd = usd(domesticShippingJpy / bankFx); // V22
 
+  // --- W22: 販売額 + 送料（USD）---
+  const baseForPercentUsd = usd(sellingUsd + shippingUsd); // W22
+
+  const dutyRate = originRate + itemRate; // I11+K11
+
+  // --- K12: 仮の関税額 ---
+  const provisionalDutyUsd = usd(baseForPercentUsd * dutyRate); // K12
+
+  // --- M15: Policy による安全マージン（80ドルとか）---
   const shippingSafetyMarkupUsd = pickShippingPolicyBand(provisionalDutyUsd); // M15
 
-  const declaredSeparateUsd = sellingUsd - shippingSafetyMarkupUsd; // J15
-  const declaredTotalUsd = declaredSeparateUsd + shippingUsd; // J16
-  const dutyUsd = +(declaredTotalUsd * dutyRate).toFixed(2); // J17
+  // ★ indexOf 用に "number" → 正しい BAND 型にキャスト
+  const policyId = SHIPPING_POLICY_BANDS_USD.indexOf(
+    shippingSafetyMarkupUsd as (typeof SHIPPING_POLICY_BANDS_USD)[number]
+  );
 
-  const customsFeeJpy = Math.round(dutyUsd * bankFx);
+  // --- J15: 申告用の「販売額」（売値 - Policy分）---
+  const declaredSeparateUsd = usd(sellingUsd - shippingSafetyMarkupUsd); // J15
+
+  // --- J16: 申告価格 合計（販売額 + 送料）---
+  const declaredTotalUsd = usd(declaredSeparateUsd + shippingUsd); // J16
+
+  // --- J17: 関税額（USD）---
+  const dutyUsd = usd(declaredTotalUsd * dutyRate); // J17
+
+  // --- Y26: 関税額（円）---
+  const customsFeeJpy = jpy0(dutyUsd * bankFx);
+
+  // --- MPF（USD固定 2.62）→ 円 ---
   const MPF_USD = 2.62;
-  const mpfJpy = Math.round(MPF_USD * bankFx);
+  const mpfJpy = jpy0(MPF_USD * bankFx);
 
-  const flatDisbJpy = 4.5 * bankFx; // V26
-  const percentDisbJpy = baseForPercentUsd * 0.02 * bankFx; // V27
-  const disbursementJpy = Math.round(Math.max(flatDisbJpy, percentDisbJpy)); // V28
+  // --- V26/V27/V28: Disbursement ---
+  const flatDisbJpy = jpy0(4.5 * bankFx); // V26
+  const percentDisbJpy = jpy0(baseForPercentUsd * 0.02 * bankFx); // V27
+  const disbursementJpy = Math.max(flatDisbJpy, percentDisbJpy); // V28
 
   if (process.env.NODE_ENV !== "production") {
     console.log("[DutyUS] steps", {
@@ -90,5 +115,6 @@ export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
     shippingSafetyMarkupUsd,
     declaredSeparateUsd,
     declaredTotalUsd,
+    policyId,
   };
 }

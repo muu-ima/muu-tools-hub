@@ -6,7 +6,7 @@ import ExchangeRate from "@/app/tools/profit-calc-us/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-us/components/Result";
 import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
 import DutyResultCard from "@/app/tools/profit-calc-us/components/DutyResultCard";
-
+import PolicySummaryCard from "@/app/tools/profit-calc-us/components/PolicySummaryCard";
 import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
 import { useCategoryFeeUS } from "@/app/tools/profit-calc-us/hooks/useCategoryFeeUS";
 import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcUS";
@@ -92,6 +92,19 @@ export default function DutyView() {
   // ローディング判定
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
+
+  const policySummary =
+    dutyResult && declaredSummary && calcResult && finalWithDuty
+      ? {
+          sellingUsd: sellingPriceNum,
+          // ここを index ではなく「80 とか 55 とかのバンド値」にする
+          policyAmountUsd: dutyResult.shippingSafetyMarkupUsd,
+          profitMarginPercent:
+            (finalWithDuty.finalProfitJPY / (calcResult.sellingPriceJPY || 1)) *
+            100,
+          purchaseAmountUsd: declaredSummary.declaredValueUsd,
+        }
+      : null;
 
   // ====== UI ======
   return (
@@ -408,6 +421,8 @@ export default function DutyView() {
               calcResult={calcResult}
             />
           )}
+
+          {policySummary && <PolicySummaryCard summary={policySummary} />}
 
           {/* 関税カード */}
           <DutyResultCard
