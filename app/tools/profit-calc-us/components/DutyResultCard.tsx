@@ -52,14 +52,7 @@ export default function DutyResultCard({
     );
   }
 
-  const {
-    customsShippingUsd,
-    baseUsd,
-    dutyUsd,
-    disbursementJpy,
-    mpfJpy,
-    customsFeeJpy,
-  } = duty;
+  const { baseUsd, dutyUsd, disbursementJpy, mpfJpy, customsFeeJpy } = duty;
 
   const { baseProfitJPY, finalProfitJPY, profitDiffJPY } = finalWithDuty;
 
@@ -106,10 +99,12 @@ export default function DutyResultCard({
             </p>
           </div>
           <div>
-            <p className="text-neutral-500 text-xs mb-1">ポリシーID</p>
-            <p className="font-semibold text-neutral-800">
-              {declaredSummary.bandPolicyId ?? "―"}
-            </p>
+            <p className="text-neutral-500 text-xs mb-1">設定ポリシー</p>
+            <span className="font-bold">
+              {typeof declaredSummary.safetyMarkupUsd === "number"
+                ? declaredSummary.safetyMarkupUsd.toFixed(0) // 80 / 55 など
+                : "―"}
+            </span>
           </div>
         </div>
       )}
@@ -118,12 +113,6 @@ export default function DutyResultCard({
 
       {/* 中段：申告価格・関税・その他USD系 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-        <div>
-          <p className="text-neutral-500 text-xs mb-1">関税用送料（USD）</p>
-          <p className="font-semibold text-neutral-800">
-            {nfUsd.format(customsShippingUsd)}
-          </p>
-        </div>
         <div>
           <p className="text-neutral-500 text-xs mb-1">販売額 + 送料（USD）</p>
           <p className="font-semibold text-neutral-800">

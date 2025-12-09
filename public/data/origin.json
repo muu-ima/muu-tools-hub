@@ -1,11 +1,19 @@
 [
-  { "name": "China", "rate": 0.30 },
+  { "name":"Japan", "rate":0.15 },
   { "name": "Vietnam", "rate": 0.20 },
+  { "name": "China", "rate": 0.30 },
   { "name": "Malaysia", "rate": 0.19 },
   { "name": "Thailand", "rate": 0.19 },
+  { "name": "Indonesia", "rate":0.19 },
+  { "name": "south Korea", "rate":0.15},
+  { "name": "Philippines", "rate":0.19},
+  { "name": "taiwan", "rate": 0.20 },
   { "name": "Germany", "rate": 0.15 },
+  { "name": "Estonia", "rate": 0.15 },
+  { "name": "Bangladesh", "rate": 0.20 },
   { "name": "India", "rate": 0.25 },
   { "name": "United States of America", "rate": 0.00 },
+  { "name": "Sri Lanka", "rate": 0.30 },
   { "name": "Switzerland", "rate": 0.39 },
   { "name": "EU", "rate": 0.15 }
 ]
