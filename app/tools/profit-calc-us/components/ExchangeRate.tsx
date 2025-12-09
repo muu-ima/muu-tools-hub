@@ -1,57 +1,24 @@
 "use client";
-import { useEffect, useState } from "react";
 
-type ExchangeRateResponse = {
-  rates?: {
-    USD?: number;
-    GBP?: number;
-  };
-};
+import { useExchangeRateUS } from "@/app/tools/profit-calc-us/hooks/useExchageRateUS";
 
 export default function ExchangeRate({
   onRateChange,
 }: {
   onRateChange?: (rate: number | null) => void;
 }) {
-  const [usdRate, setUsdRate] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/exchange-rate")
-      .then((res) => res.json())
-      .then((data: ExchangeRateResponse) => {
-        if (cancelled) return;
-        const rate = data.rates?.USD ?? null;
-
-        setUsdRate(rate);
-        setLoading(false);
-
-        if (onRateChange) onRateChange(rate);
-      })
-      .catch((err) => {
-        console.error("為替取得エラー", err);
-        if (cancelled) return;
-        setUsdRate(null);
-        setLoading(false);
-        if (onRateChange) onRateChange(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [onRateChange]);
+  const { rate: usdRate, loading } = useExchangeRateUS(onRateChange);
 
   return (
     <section className="mb-4">
       <div
         className="
-                bg-white/60
-                border border-white/40
-                backdrop-blur-4px
-                rounded-2xl
-                p-5 shadow-sm
-            "
+          bg-white/60
+          border border-white/40
+          backdrop-blur-4px
+          rounded-2xl
+          p-5 shadow-sm
+        "
       >
         <div className="flex items-center justify-between gap-4 mb-2">
           <div>

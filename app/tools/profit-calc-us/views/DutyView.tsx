@@ -12,8 +12,11 @@ import { useCategoryFeeUS } from "@/app/tools/profit-calc-us/hooks/useCategoryFe
 import { useProfitCalcUS } from "@/app/tools/profit-calc-us/hooks/useProfitCalcUS";
 import { useTimeout } from "@/app/tools/profit-calc-uk/hooks/useTimeout";
 import { useDutyUS } from "@/app/tools/profit-calc-us/hooks/useDutyUS";
+import { usePolicySummaryUS } from "@/app/tools/profit-calc-us/hooks/usePolicySummaryUS";
 import { motion, AnimatePresence } from "framer-motion";
+
 import { ORIGIN_RATES_US, HTS_RATES_US } from "@/lib/profit-calc-us";
+import { formatRate, formatHtsCodeShort } from "@/lib/profit-calc-us/format";
 
 export default function DutyView() {
   // ====== State ======
@@ -55,6 +58,10 @@ export default function DutyView() {
     }
   }, [rate]);
 
+  const stateTaxRate = 0.0671; // 州税 6.71%
+  const sellingPriceNum = sellingPrice !== "" ? parseFloat(sellingPrice) : 0;
+  const sellingPriceInclTax = sellingPriceNum + sellingPriceNum * stateTaxRate;
+
   // 利益計算（既存 US コア）
   const { calcResult, final, isEnabled } = useProfitCalcUS({
     sellingPrice,
@@ -64,9 +71,6 @@ export default function DutyView() {
     selectedCategoryFee,
   });
 
-  const stateTaxRate = 0.0671;
-  const sellingPriceNum = sellingPrice !== "" ? parseFloat(sellingPrice) : 0;
-  const sellingPriceInclTax = sellingPriceNum + sellingPriceNum * stateTaxRate;
 
   const { originLabel, htsLabel, dutyResult, finalWithDuty, declaredSummary } =
     useDutyUS({
@@ -78,58 +82,16 @@ export default function DutyView() {
       finalProfit: final?.profitJPY ?? null,
     });
 
-  function formatRate(rate: number): string {
-    return (rate * 100).toFixed(2); // 小数2桁
-  }
-
-  // "4202.92.1000" → "4202.92" にする表示用フォーマット
-  function formatHtsCodeShort(code: string): string {
-    const parts = code.split(".");
-    if (parts.length <= 2) return code; // もともと短いコードはそのまま
-    return `${parts[0]}.${parts[1]}`;
-  }
+  const policySummary = usePolicySummaryUS({
+    sellingPriceNum,
+    dutyResult,
+    calcResult,
+    finalWithDuty,
+  });
 
   // ローディング判定
   const coreReady = rate !== null && categoryOptions.length > 0;
   const isLoadingAll = !coreReady && !timeoutReached;
-
-  const STATE_TAX_RATE_US = 0.0671; // 6.71% の平均州税
-  const toUsd = (v: number) => Number(v.toFixed(2));
-  const policySummary =
-    dutyResult && declaredSummary && calcResult && finalWithDuty
-      ? (() => {
-          // スプレッドシートの記号に対応させる
-          const I8 = sellingPriceNum; // 売値 USD
-          const M15 = dutyResult.shippingSafetyMarkupUsd; // 設定ポリシー USD
-          const J17 = dutyResult.dutyUsd; // 関税額 USD
-
-          // J18 = M15 - J17
-          const J18 = toUsd(M15 - J17);
-
-          // J19 = I8 - J18
-          const J19 = toUsd(I8 - J18);
-
-          // J20 = J19 * 州税率(6.71%)
-          const J20 = toUsd(J19 * STATE_TAX_RATE_US);
-
-          // R8 = J19 - J20  … 販売額
-          const R8 = toUsd(J19 - J20);
-
-          // U8 = R8 + M15 - J20 … 購入金額
-          const U8 = toUsd(R8 + M15 - J20);
-
-          return {
-            // ★ ここがスプシの「販売額 89」「購入金額 113」に対応
-            sellingUsd: R8,
-            policyAmountUsd: M15,
-            profitMarginPercent:
-              (finalWithDuty.finalProfitJPY /
-                (calcResult.sellingPriceJPY || 1)) *
-              100,
-            purchaseAmountUsd: U8,
-          };
-        })()
-      : null;
 
   console.log("DutyView rate check", {
     calcResult,
