@@ -5,8 +5,7 @@ import Sidebar from "@/app/tools/shipping-manager/components/Sidebar";
 import LoadingOverlay from "@/app/tools/shipping-manager/components/LoadingOverlay";
 import DraggableScroll from "@/app/tools/shipping-manager/components/DraggableScroll";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
+import { useSearchParams, usePathname } from "next/navigation";
 import {
   CATEGORY_LABELS,
   type CategorySlug,
@@ -18,7 +17,7 @@ import type {
   SearchResponse,
 } from "@/features/products/types";
 
-import { SHEETS } from "@/features/products/productTypes"
+import { SHEETS } from "@/features/products/productTypes";
 import type { SheetKey } from "@/features/products/productTypes";
 
 import { normalizeMeta, fmtNum, fmtTxt } from "@/features/products/utils";
@@ -27,10 +26,15 @@ import { getProducts } from "@/features/products/api";
 /* ===== クライアント本体 ===== */
 export default function ProductsPageClient() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   // URL → SearchQuery に整形（useMemoで安定化）
   const sp: SearchQuery = useMemo(() => {
-    const get = (k: string) => searchParams.get(k) ?? undefined;
+    const get = (k: string) => {
+      const v = searchParams.get(k);
+      // ★ 空文字や空白だけのときは undefined 扱いにする
+      return v && v.trim() !== "" ? v : undefined;
+    };
     const getAll = (k: string) => {
       const arr = searchParams.getAll(k);
       return arr.length ? arr : undefined;
@@ -66,7 +70,7 @@ export default function ProductsPageClient() {
       setLoading(true);
       try {
         const apiParams = {
-          sheet: sheetDef.key, 
+          sheet: sheetDef.key,
           child_category: sp.child_category,
           id: sp.id,
           q: sp.q,
@@ -79,15 +83,40 @@ export default function ProductsPageClient() {
           per_page: sp.per_page ?? "15",
         } as const;
 
-        const { data, meta } = await getProducts(apiParams);
+        const { data, meta: apiMeta } = await getProducts(apiParams);
+
+        // ★ meta をフロント用の形に正規化
+        const normalizedMeta: SearchResponse["meta"] | undefined = apiMeta
+          ? {
+              total: apiMeta.total ?? 0,
+              pages:
+                // どっちか入っているほうを採用
+                (apiMeta as { pages?: number; total_pages?: number }).pages ??
+                (apiMeta as { pages?: number; total_pages?: number })
+                  .total_pages ??
+                1,
+              page: apiMeta.page ?? 1,
+              perPage:
+                (apiMeta as { perPage?: number; per_page?: number }).perPage ??
+                (apiMeta as { perPage?: number; per_page?: number }).per_page ??
+                15,
+            }
+          : undefined;
+
         setItems(data ?? []);
-        setMeta(meta);
+        setMeta(normalizedMeta);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [sheetDef.id, spKey]);
+
+  console.log("meta from API", meta);
+
+  const pages = meta?.pages ?? 1;
+
+  const perPageParam = meta?.perPage?.toString() ?? sp.per_page ?? "15";
 
   return (
     <main className="h-screen flex flex-row">
@@ -144,10 +173,7 @@ export default function ProductsPageClient() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={11}
-                      className="py-6 text-center text-gray-500"
-                    >
+                    <td colSpan={11} className="py-6 text-center text-gray-500">
                       データがありません
                     </td>
                   </tr>
@@ -173,17 +199,15 @@ export default function ProductsPageClient() {
                       ? p.child_category
                       : "";
 
-                    const categorySlug = (metaCat ||
-                      legacyTop) as "" | CategorySlug;
+                    const categorySlug = (metaCat || legacyTop) as
+                      | ""
+                      | CategorySlug;
                     const categoryLabel = categorySlug
                       ? CATEGORY_LABELS[categorySlug] ?? categorySlug
                       : "-";
 
                     return (
-                      <tr
-                        key={p.id}
-                        className="border-b hover:bg-gray-50"
-                      >
+                      <tr key={p.id} className="border-b hover:bg-gray-50">
                         <td className="py-2 px-3">{p.id}</td>
                         <td className="py-2 px-3">{title}</td>
                         <td className="py-2 px-3 text-right tabular-nums">
@@ -204,9 +228,7 @@ export default function ProductsPageClient() {
                         <td className="py-2 px-3 text-right tabular-nums">
                           {fmtNum(m.applied_weight_g)}
                         </td>
-                        <td className="py-2 px-3">
-                          {fmtTxt(m.carrier)}
-                        </td>
+                        <td className="py-2 px-3">{fmtTxt(m.carrier)}</td>
                         <td className="py-2 px-3">
                           {fmtTxt(m.amazon_size_label)}
                         </td>
@@ -221,7 +243,8 @@ export default function ProductsPageClient() {
         </div>
 
         {/* ページネーション（…省略付き） */}
-        {meta && meta.pages > 1 && (
+        {/* ページネーション（…省略付き） */}
+        {meta && pages > 1 && (
           <nav
             className="flex items-center justify-center gap-2 mt-4"
             aria-label="ページネーション"
@@ -230,8 +253,12 @@ export default function ProductsPageClient() {
             {meta.page > 1 && (
               <Link
                 href={{
-                  pathname: "/tools/shipping-manager/products",
-                  query: { ...sp, page: String(meta.page - 1) },
+                  pathname, // ← 今いるパスをそのまま使う
+                  query: {
+                    ...sp,
+                    page: String(meta.page - 1),
+                    per_page: perPageParam,
+                  },
                 }}
                 prefetch={false}
                 className="px-3 py-1 border rounded hover:bg-gray-100"
@@ -241,20 +268,24 @@ export default function ProductsPageClient() {
             )}
 
             {/* ページ番号（…省略） */}
-            {Array.from({ length: meta.pages }).map((_, i) => {
+            {Array.from({ length: pages }).map((_, i) => {
               const pageNum = i + 1;
 
               if (
                 pageNum === 1 ||
-                pageNum === meta.pages ||
+                pageNum === pages ||
                 Math.abs(pageNum - meta.page) <= 2
               ) {
                 return (
                   <Link
                     key={pageNum}
                     href={{
-                      pathname: "/tools/shipping-manager/products",
-                      query: { ...sp, page: String(pageNum) },
+                      pathname,
+                      query: {
+                        ...sp,
+                        page: String(pageNum),
+                        per_page: perPageParam,
+                      },
                     }}
                     prefetch={false}
                     className={`px-3 py-1 border rounded ${
@@ -270,8 +301,7 @@ export default function ProductsPageClient() {
 
               if (
                 (pageNum === 2 && meta.page > 4) ||
-                (pageNum === meta.pages - 1 &&
-                  meta.page < meta.pages - 3)
+                (pageNum === pages - 1 && meta.page < pages - 3)
               ) {
                 return (
                   <span key={pageNum} className="px-2">
@@ -284,11 +314,15 @@ export default function ProductsPageClient() {
             })}
 
             {/* 次へ */}
-            {meta.page < meta.pages && (
+            {meta.page < pages && (
               <Link
                 href={{
-                  pathname: "/tools/shipping-manager/products",
-                  query: { ...sp, page: String(meta.page + 1) },
+                  pathname,
+                  query: {
+                    ...sp,
+                    page: String(meta.page + 1),
+                    per_page: perPageParam,
+                  },
                 }}
                 prefetch={false}
                 className="px-3 py-1 border rounded hover:bg-gray-100"
