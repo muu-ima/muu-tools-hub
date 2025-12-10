@@ -71,7 +71,6 @@ export default function DutyView() {
     selectedCategoryFee,
   });
 
-
   const { originLabel, htsLabel, dutyResult, finalWithDuty, declaredSummary } =
     useDutyUS({
       rate,
@@ -108,11 +107,11 @@ export default function DutyView() {
       `}
     >
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-800">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-800">
           US Duty Calculator
         </h1>
-        <p className="text-[13px] text-neutral-600 mt-1">
-          HTS・原産国・申告額・送料をもとに関税負担と最終利益を詳細に算出します
+        <p className="text-sm text-neutral-600 mt-1">
+          HTS・原産国・申告額・送料をもとに関税負担と最終利益を算出します
         </p>
       </div>
 

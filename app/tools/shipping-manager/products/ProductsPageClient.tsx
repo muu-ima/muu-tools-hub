@@ -76,7 +76,7 @@ export default function ProductsPageClient() {
           carrier: sp.carrier,
           amazon_size_label: sp.amazon_size_label,
           page: sp.page,
-          per_page: sp.per_page ?? "50",
+          per_page: sp.per_page ?? "15",
         } as const;
 
         const { data, meta } = await getProducts(apiParams);
