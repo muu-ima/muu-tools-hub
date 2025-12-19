@@ -23,7 +23,7 @@ export default function PolicySummaryCard({ summary }: Props) {
 
       <div className="space-y-3">
         <div className="flex justify-between">
-          <span className="text-neutral-600">VeRO販売額（USD）</span>
+          <span className="text-neutral-600">販売額（USD）</span>
           <span className="font-bold">${sellingUsd.toFixed(2)}</span>
         </div>
 
@@ -38,7 +38,7 @@ export default function PolicySummaryCard({ summary }: Props) {
         </div>
 
         <div className="flex justify-between">
-          <span className="text-neutral-600">購入金額（USD）</span>
+          <span className="text-neutral-600">VeRO販売額（USD）</span>
           <span className="font-bold">${purchaseAmountUsd.toFixed(2)}</span>
         </div>
       </div>
