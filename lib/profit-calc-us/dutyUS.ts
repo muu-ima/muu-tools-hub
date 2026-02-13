@@ -65,7 +65,7 @@ export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
 
   // ★ indexOf 用に "number" → 正しい BAND 型にキャスト
   const policyId = SHIPPING_POLICY_BANDS_USD.indexOf(
-    shippingSafetyMarkupUsd as (typeof SHIPPING_POLICY_BANDS_USD)[number]
+    shippingSafetyMarkupUsd as (typeof SHIPPING_POLICY_BANDS_USD)[number],
   );
 
   // --- J15: 申告用の「販売額」（売値 - Policy分）---
@@ -85,7 +85,8 @@ export function calculateDutyUS(params: DutyCalcParamsUS): DutyCalcResultUS {
   const mpfJpy = jpy0(MPF_USD * bankFx);
 
   // --- V26/V27/V28: Disbursement ---
-  const flatDisbJpy = jpy0(4.5 * bankFx); // V26
+  const FLAT_DISB_USD = 15; // ← 4.5 → 15 に変更
+  const flatDisbJpy = jpy0(FLAT_DISB_USD * bankFx); // V26
   const percentDisbJpy = jpy0(baseForPercentUsd * 0.02 * bankFx); // V27
   const disbursementJpy = Math.max(flatDisbJpy, percentDisbJpy); // V28
 

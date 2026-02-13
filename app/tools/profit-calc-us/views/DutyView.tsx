@@ -4,7 +4,6 @@
 import React, { useEffect, useState } from "react";
 import ExchangeRate from "@/app/tools/profit-calc-us/components/ExchangeRate";
 import Result from "@/app/tools/profit-calc-us/components/Result";
-import FinalResultModal from "@/app/tools/profit-calc-us/components/FinalResultModal";
 import DutyResultCard from "@/app/tools/profit-calc-us/components/DutyResultCard";
 import PolicySummaryCard from "@/app/tools/profit-calc-us/components/PolicySummaryCard";
 import { useShippingUS } from "@/app/tools/profit-calc-us/hooks/useShippingUS";
@@ -26,8 +25,6 @@ export default function DutyView() {
 
   const [selectedOrigin, setSelectedOrigin] = useState<string>("");
   const [selectedHts, setSelectedHts] = useState<string>("");
-
-  const [isOpen, setIsOpen] = useState(false);
 
   // タイマー（ローディング演出）
   const timeoutReached = useTimeout(5000);
@@ -246,7 +243,7 @@ export default function DutyView() {
                               setWeight(
                                 e.target.value === ""
                                   ? null
-                                  : Number(e.target.value)
+                                  : Number(e.target.value),
                               )
                             }
                             className="w-full px-3 py-2 border bg-white border-neutral-300 rounded-md shadow-sm"
@@ -425,31 +422,6 @@ export default function DutyView() {
             exchangeRateUSDtoJPY={rate ?? 0}
             declaredSummary={declaredSummary}
           />
-
-          {/* モーダルボタン */}
-          <button
-            onClick={() => setIsOpen(true)}
-            disabled={!isEnabled}
-            className={`btn-primary ${
-              isEnabled
-                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                : "bg-gray-400 cursor-not-allowed text-gray-200"
-            } px-8 py-4 text-lg rounded-full transition-colors duration-300`}
-          >
-            最終利益の詳細を見る
-          </button>
-
-          {/* モーダル */}
-          {final && (
-            <FinalResultModal
-              isOpen={isOpen}
-              onClose={() => setIsOpen(false)}
-              shippingMethod={shippingResult?.method || ""}
-              shippingJPY={calcResult?.shippingJPY || 0}
-              data={final}
-              exchangeRateUSDtoJPY={rate ?? 0}
-            />
-          )}
         </div>
       </div>
     </div>
