@@ -16,8 +16,11 @@ function pickShippingPolicyBand(k12: number): number {
   const greaterOrEqual = bands.filter((b) => b >= k12);
   const lessOrEqual = bands.filter((b) => b <= k12);
 
-  const m18 = greaterOrEqual.length > 0 ? Math.min(...greaterOrEqual) : 110; // M18
-  const m19 = lessOrEqual.length > 0 ? Math.max(...lessOrEqual) : 80; // M19
+  const m18 =
+    greaterOrEqual.length > 0
+      ? Math.min(...greaterOrEqual)
+      : bands[bands.length - 1]; // M18
+  const m19 = lessOrEqual.length > 0 ? Math.max(...lessOrEqual) : bands[0]; // M19
 
   const n18 = m18 - k12; // N18
   const n19 = m19 - k12; // N19
