@@ -3,12 +3,27 @@ import { NextResponse } from "next/server";
 
 type FloatRateResponse = {
     jpy?: {
-        rate?: number;
+        rate?: number | string;
     };
     JPY?: {
-        rate?: number;
+        rate?: number | string;
     };
     [key: string]: unknown;
+}
+
+export const dynamic = "force-dynamic";
+
+function parseRate(rate: number | string | undefined): number | null {
+  if (typeof rate === "number" && Number.isFinite(rate)) {
+    return rate;
+  }
+
+  if (typeof rate === "string") {
+    const parsed = Number(rate);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }
 
 export async function GET() {
@@ -33,12 +48,9 @@ export async function GET() {
       const data: FloatRateResponse = await res.json();
 
       // 念のため jpy / JPY 両対応
-      const jpyRate =
-        data?.jpy?.rate ??
-        data?.JPY?.rate ??
-        null;
+      const jpyRate = parseRate(data?.jpy?.rate ?? data?.JPY?.rate);
 
-      if (typeof jpyRate === "number") {
+      if (jpyRate !== null) {
         rates[cur] = Number(jpyRate.toFixed(3));
       } else {
         errors.push(`${cur}: jpy rate missing`);

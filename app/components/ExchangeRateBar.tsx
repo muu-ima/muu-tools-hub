@@ -8,6 +8,12 @@ type Rates = {
   USD: number;
 };
 
+type ExchangeRateResponse = {
+  timestamp?: string;
+  rates?: Partial<Rates>;
+  errors?: string[];
+};
+
 export default function ExchangeRateBar() {
   const [rates, setRates] = useState<Rates | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -21,12 +27,18 @@ export default function ExchangeRateBar() {
         if (!res.ok) {
           throw new Error(`status ${res.status}`);
         }
-        const data = await res.json();
-        if (data?.rates?.GBP && data?.rates?.USD) {
+        const data: ExchangeRateResponse = await res.json();
+        if (typeof data?.rates?.GBP === "number" && typeof data?.rates?.USD === "number") {
           setRates({
             GBP: data.rates.GBP,
             USD: data.rates.USD,
           });
+        } else {
+          setRates(null);
+          setError("為替レートの取得に失敗しました");
+          if (data?.errors?.length) {
+            console.error("為替APIエラー", data.errors);
+          }
         }
         if (data?.timestamp) {
           setUpdatedAt(data.timestamp);
