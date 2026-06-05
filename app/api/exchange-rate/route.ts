@@ -1,17 +1,21 @@
 // app/api/exchange-rate/route.ts
 import { NextResponse } from "next/server";
 
-type FloatRateResponse = {
-    jpy?: {
-        rate?: number | string;
-    };
-    JPY?: {
-        rate?: number | string;
-    };
-    [key: string]: unknown;
-}
+type ExchangeRateApiResponse = {
+  result?: string;
+  time_last_update_utc?: string;
+  provider?: string;
+  documentation?: string;
+  terms_of_use?: string;
+  rates?: {
+    GBP?: number | string;
+    JPY?: number | string;
+  };
+};
 
 export const dynamic = "force-dynamic";
+
+const EXCHANGE_RATE_API_URL = "https://open.er-api.com/v6/latest/USD";
 
 function parseRate(rate: number | string | undefined): number | null {
   if (typeof rate === "number" && Number.isFinite(rate)) {
@@ -26,46 +30,73 @@ function parseRate(rate: number | string | undefined): number | null {
   return null;
 }
 
-export async function GET() {
-  const urls = {
-    GBP: "https://www.floatrates.com/daily/gbp.json",
-    USD: "https://www.floatrates.com/daily/usd.json",
-  };
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 5000): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const rates: Record<string, number> = {};
-  const errors: string[] = [];
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
 
-  for (const [cur, url] of Object.entries(urls)) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-
-      // 外部APIが 500 / 404 / 429 などのとき
-      if (!res.ok) {
-        errors.push(`${cur}: status ${res.status}`);
-        continue;
-      }
-
-      const data: FloatRateResponse = await res.json();
-
-      // 念のため jpy / JPY 両対応
-      const jpyRate = parseRate(data?.jpy?.rate ?? data?.JPY?.rate);
-
-      if (jpyRate !== null) {
-        rates[cur] = Number(jpyRate.toFixed(3));
-      } else {
-        errors.push(`${cur}: jpy rate missing`);
-      }
-    } catch (e) {
-       // e は unknown で受ける
-      const err = e instanceof Error ? e.message : "unknown error";
-       errors.push(`${cur}: ${err}`);
+    if (!res.ok) {
+      throw new Error(`status ${res.status}`);
     }
+
+    return res.json() as Promise<T>;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function getRatesFromExchangeRateApi() {
+  const data = await fetchJsonWithTimeout<ExchangeRateApiResponse>(
+    EXCHANGE_RATE_API_URL,
+  );
+
+  if (data.result !== "success") {
+    throw new Error(`unexpected result: ${data.result ?? "missing"}`);
   }
 
-  // ここでは 500 にせず、必ず 200 で返す
-  return NextResponse.json({
-    timestamp: new Date().toISOString(),
-    rates,                         // 取れた分だけ or 空オブジェクト
-    errors: errors.length ? errors : undefined,
-  });
+  const usdToJpy = parseRate(data.rates?.JPY);
+  const usdToGbp = parseRate(data.rates?.GBP);
+
+  if (usdToJpy === null || usdToGbp === null || usdToGbp === 0) {
+    throw new Error("JPY or GBP rate missing");
+  }
+
+  return {
+    timestamp: data.time_last_update_utc
+      ? new Date(data.time_last_update_utc).toISOString()
+      : new Date().toISOString(),
+    rates: {
+      GBP: Number((usdToJpy / usdToGbp).toFixed(3)),
+      USD: Number(usdToJpy.toFixed(3)),
+    },
+    provider: "ExchangeRate-API",
+    attribution: {
+      label: "Rates By Exchange Rate API",
+      url: "https://www.exchangerate-api.com",
+    },
+    source: {
+      provider: data.provider,
+      documentation: data.documentation,
+      termsOfUse: data.terms_of_use,
+    },
+  };
+}
+
+export async function GET() {
+  try {
+    return NextResponse.json(await getRatesFromExchangeRateApi());
+  } catch (e) {
+    const err = e instanceof Error ? e.message : "unknown error";
+
+    return NextResponse.json({
+      timestamp: new Date().toISOString(),
+      rates: {},
+      errors: [`ExchangeRate-API: ${err}`],
+    });
+  }
 }

@@ -11,12 +11,18 @@ type Rates = {
 type ExchangeRateResponse = {
   timestamp?: string;
   rates?: Partial<Rates>;
+  attribution?: {
+    label: string;
+    url: string;
+  };
   errors?: string[];
 };
 
 export default function ExchangeRateBar() {
   const [rates, setRates] = useState<Rates | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [attribution, setAttribution] =
+    useState<ExchangeRateResponse["attribution"] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +48,9 @@ export default function ExchangeRateBar() {
         }
         if (data?.timestamp) {
           setUpdatedAt(data.timestamp);
+        }
+        if (data?.attribution) {
+          setAttribution(data.attribution);
         }
       } catch (e) {
         console.error("為替APIエラー", e);
@@ -77,6 +86,17 @@ export default function ExchangeRateBar() {
           <span className="text-[10px] md:text-[11px] text-sky-700/80">
             更新: {new Date(updatedAt).toLocaleString("ja-JP")}
           </span>
+        )}
+
+        {attribution && (
+          <a
+            href={attribution.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] md:text-[11px] text-sky-700/80 underline underline-offset-2"
+          >
+            {attribution.label}
+          </a>
         )}
       </div>
     </div>
