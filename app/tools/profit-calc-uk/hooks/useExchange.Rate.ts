@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 
 export type Currency = "GBP" | "USD";
 
@@ -27,13 +27,6 @@ export function useExchangeRate() {
         },
         []
     );
-
-    // ログ (デバッグ用) はここに寄せる
-    useEffect(() => {
-        if (rate !== null) {
-            console.log(`最新為替レート :${rate}`);
-        }
-    }, [rate]);
 
     return {
         rate,

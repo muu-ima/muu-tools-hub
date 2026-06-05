@@ -42,36 +42,28 @@ export function calculateFinalProfitDetail({
     includeVAT && isUnder135GBP(sellingPriceGBP)
       ? applyVAT(sellingPriceGBP)
       : sellingPriceGBP;
-  console.log("1. VAT込み売値 (￡):", adjustedPriceGBP);
 
   // 2. カテゴリ手数料 (￡)
   const categoryFeeGBP = adjustedPriceGBP * (categoryFeePercent / 100);
-  console.log("2.カテゴリ手数料（￡）:", categoryFeeGBP);
 
   // 3. 関税 (￡)
   const customsFeeGBP = adjustedPriceGBP * (customsRatePercent / 100);
-  console.log("3. 関税（￡）:", customsFeeGBP);
 
   // 4. 粗利 (￡)
   const grossProfitGBP = adjustedPriceGBP - (categoryFeeGBP + customsFeeGBP);
-  console.log("4. 粗利（￡）:", grossProfitGBP);
 
   // 5. Payoneer手数料 (粗利の %) (￡)
   const payoneerFeeGBP = grossProfitGBP * (payoneerFeePercent / 100);
-  console.log("5. payoneer手数料（￡）:", payoneerFeeGBP);
 
   // 6. 総手数料合計 (￡)
   const totalFeesGBP = categoryFeeGBP + payoneerFeeGBP + customsFeeGBP;
-  console.log("6. 総手数料合計（￡）:", totalFeesGBP);
 
   // 7. 手数料引き後の正味収入 (￡) ← VAT込み総額ベース
   const netSellingGBP = adjustedPriceGBP - totalFeesGBP;
-  console.log("7. 手数料引き後の正味収入（￡）:", netSellingGBP);
 
   // 8.両替手数料(JPY)
   const exchangeFeePerGBP = 3.3;
   const exchangeFeeJPY = netSellingGBP * exchangeFeePerGBP;
-  console.log("8.両替手数料(JPY)：", exchangeFeeJPY);
 
   // 9.正味JPY(GBP→JPY換算、両替手数料を引く)
   const netSellingJPY = netSellingGBP * exchangeRateGBPtoJPY - exchangeFeeJPY;
@@ -306,26 +298,6 @@ export function calculateSellingPriceFromProfitRateUK({
 
   const tolerance = 0.0001;
 
-  if (debug) {
-    console.log("== ReverseCalcUK start ==", {
-      targetProfitRatePercent: targetProfitRate,
-      targetProfitRate: target,
-      profitMode,
-      includeVAT,
-      params: {
-        costPriceJPY,
-        shippingJPY,
-        categoryFeePercent,
-        customsRatePercent,
-        payoneerFeePercent,
-        exchangeRateGBPtoJPY,
-      },
-      basePriceGBP,
-      initialLow: low,
-      initialHigh: high,
-    });
-  }
-
   const getProfitRate = (sellingPriceGBPBase: number): number => {
     // sellingPriceGBPBase は「VAT 判定前の基準価格（exVAT）」とみなす
     const detail = calculateFinalProfitDetail({
@@ -355,17 +327,6 @@ export function calculateSellingPriceFromProfitRateUK({
   for (let i = 0; i < 100; i++) {
     const mid = (low + high) / 2;
     const currentRate = getProfitRate(mid);
-
-    if (debug) {
-      console.log(`ReverseCalcUK Iteration ${i}`, {
-        low,
-        high,
-        mid,
-        currentProfitRate: currentRate,           // 0.04996...
-        currentProfitRatePercent: currentRate * 100, // 4.996...
-        diffFromTarget: currentRate - target,
-      });
-    }
 
     if (Math.abs(currentRate - target) < tolerance) {
       low = mid;
@@ -397,36 +358,6 @@ export function calculateSellingPriceFromProfitRateUK({
   const priceGBPIncVAT = finalDetail.adjustedPriceGBP; // ← VAT 判定後（順行と完全一致）
   const priceJPY =
     Math.ceil(priceGBPIncVAT * exchangeRateGBPtoJPY * 100) / 100;
-
-  if (debug) {
-    const sellingJPY = finalDetail.sellingPriceJPY;
-    const pureMarginPercent =
-      sellingJPY === 0 ? 0 : (finalDetail.netProfitJPY / sellingJPY) * 100;
-    const finalMarginPercent = finalDetail.profitMargin;
-    const chosenMarginPercent =
-      profitMode === "pure" ? pureMarginPercent : finalMarginPercent;
-
-    console.log("== ReverseCalcUK done ==", {
-      targetProfitRatePercent: targetProfitRate,
-      profitMode,
-      includeVAT,
-      finalPriceGBPExVAT: priceGBPExVAT,
-      finalPriceGBPIncVAT: priceGBPIncVAT,
-      finalPriceJPY: priceJPY,
-      forwardDetail: {
-        adjustedPriceGBP: finalDetail.adjustedPriceGBP,
-        sellingPriceJPY: finalDetail.sellingPriceJPY,
-        netProfitJPY: finalDetail.netProfitJPY,
-        profitMarginPercent: finalDetail.profitMargin,
-      },
-      marginCheck: {
-        pureMarginPercent,
-        finalMarginPercent,
-        usedMarginPercent: chosenMarginPercent,
-        diffFromTargetPercent: chosenMarginPercent - targetProfitRate,
-      },
-    });
-  }
 
   return {
     priceGBPExVAT,
